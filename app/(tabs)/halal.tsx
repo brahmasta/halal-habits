@@ -1,62 +1,58 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Dimensions,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Card } from '../../components/ui/Card';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Path } from 'react-native-svg';
+import Animated from 'react-native-reanimated';
+import { enter } from '../../components/ui/enter';
+import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { SectionDivider } from '../../components/ui/SectionDivider';
-import { StarPattern } from '../../components/ui/StarPattern';
 import { HALAL_PLACES } from '../../services/muis';
-import { Colors, Fonts, Radius, Shadow } from '../../constants/theme';
+import { Colors, Fonts, Gradients, Radius, Shadow } from '../../constants/theme';
 
-const W = Dimensions.get('window').width;
+const CUISINES = [
+  '🍛 Malay',
+  '🍛 Indian Muslim',
+  '🍢 Hawker',
+  '☕ Café',
+  '🍜 Noodles',
+  '🥩 BBQ',
+];
 
-const CUISINES = ['Malay', 'Indian Muslim', 'Hawker', 'Café', 'Noodles', 'BBQ'];
-
-const TAG_COLORS: Record<string, { bg: string; text: string }> = {
-  Iconic: { bg: Colors.goldLight, text: Colors.gold },
-  Popular: { bg: Colors.jadeLight, text: Colors.jade },
-  'Must Try': { bg: Colors.roseLight, text: Colors.rose },
+// Map a display pill label to the substring(s) used to match a place's cuisine.
+const CUISINE_MATCH: Record<string, string[]> = {
+  '🍛 Malay': ['Malay', 'Nasi'],
+  '🍛 Indian Muslim': ['Indian', 'Biryani'],
+  '🍢 Hawker': ['Hawker'],
+  '☕ Café': ['Café'],
+  '🍜 Noodles': ['Noodle'],
+  '🥩 BBQ': ['BBQ'],
 };
 
-function StarRating({ rating }: { rating: number }) {
-  const full = Math.floor(rating);
-  const frac = rating - full;
+function SearchIcon() {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1 }}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Text
-          key={i}
-          style={{
-            fontSize: 10,
-            color:
-              i < full
-                ? Colors.gold
-                : i === full && frac > 0
-                  ? Colors.gold
-                  : Colors.border,
-          }}
-        >
-          ★
-        </Text>
-      ))}
-      <Text
-        style={{
-          fontFamily: Fonts.bodyMedium,
-          fontSize: 11,
-          color: Colors.inkLight,
-          marginLeft: 3,
-        }}
-      >
-        {rating.toFixed(1)}
-      </Text>
-    </View>
+    <Svg width={15} height={15} viewBox="0 0 24 24">
+      <Circle cx={11} cy={11} r={8} stroke="rgba(255,255,255,0.5)" strokeWidth={2} />
+      <Path
+        d="m21 21-4.35-4.35"
+        stroke="rgba(255,255,255,0.5)"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+function CameraIcon({ size = 20, stroke = '#fff', strokeWidth = 1.7, r = 3.2 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M3 8a2 2 0 012-2h1.5l1-1.5h5l1 1.5H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+      <Circle cx={12} cy={12.5} r={r} stroke={stroke} strokeWidth={strokeWidth} />
+    </Svg>
   );
 }
 
@@ -72,462 +68,391 @@ export default function HalalScreen() {
       p.district.toLowerCase().includes(search.toLowerCase());
     const matchCuisine =
       activeCuisine === null ||
-      p.cuisine.toLowerCase().includes(activeCuisine.toLowerCase()) ||
-      (activeCuisine === 'Malay' &&
-        (p.cuisine.includes('Malay') || p.cuisine.includes('Nasi'))) ||
-      (activeCuisine === 'Indian Muslim' &&
-        (p.cuisine.includes('Indian') || p.cuisine.includes('Biryani'))) ||
-      (activeCuisine === 'Hawker' && p.cuisine.includes('Hawker')) ||
-      (activeCuisine === 'Café' && p.cuisine.includes('Café')) ||
-      (activeCuisine === 'Noodles' && p.cuisine.includes('Noodle')) ||
-      (activeCuisine === 'BBQ' && p.cuisine.includes('BBQ'));
+      (CUISINE_MATCH[activeCuisine] ?? []).some((needle) =>
+        p.cuisine.toLowerCase().includes(needle.toLowerCase())
+      );
     return matchSearch && matchCuisine;
   });
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: Colors.bg }}
-      edges={['top']}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }} edges={['top']}>
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 32 }}
       >
-        {/* Header with amber warm tone */}
-        <View
-          style={{
-            backgroundColor: Colors.gold,
-            paddingHorizontal: 22,
-            paddingTop: 56,
-            paddingBottom: 24,
-            minHeight: 220,
-            overflow: 'hidden',
-            position: 'relative',
-          }}
-        >
-          <StarPattern opacity={0.08} width={W} height={300} />
-          <View
-            style={{
-              position: 'absolute',
-              top: -50,
-              right: -50,
-              width: 180,
-              height: 180,
-              borderRadius: 90,
-              backgroundColor: 'rgba(255,255,255,0.10)',
-            }}
-          />
-          <View
-            style={{
-              position: 'absolute',
-              bottom: -30,
-              left: -30,
-              width: 140,
-              height: 140,
-              borderRadius: 70,
-              backgroundColor: 'rgba(184,130,42,0.18)',
-            }}
-          />
-
-          <View style={{ position: 'relative', zIndex: 1 }}>
+        <ScreenHeader
+          eyebrow="✦ MUIS Certified Data"
+          eyebrowColor={Colors.goldEyebrow}
+          title={'Halal\nFood Finder'}
+          titleSize={32}
+          subtitle={
             <Text
               style={{
-                fontFamily: Fonts.bodySemiBold,
-                fontSize: 10.5,
-                color: 'rgba(255,255,255,0.75)',
-                letterSpacing: 1.4,
-                textTransform: 'uppercase',
-                marginBottom: 6,
-              }}
-            >
-              ✦ MUIS Certified Data
-            </Text>
-            <Text
-              style={{
-                fontFamily: Fonts.serif,
-                fontSize: 30,
-                color: Colors.white,
-                lineHeight: 36,
-                marginBottom: 4,
-              }}
-            >
-              {'Halal\nFood Finder'}
-            </Text>
-            <Text
-              style={{
-                fontFamily: Fonts.body,
+                fontFamily: Fonts.medium,
                 fontSize: 13,
-                color: 'rgba(255,255,255,0.75)',
-                marginBottom: 14,
+                color: 'rgba(255,255,255,0.6)',
               }}
             >
-              Singapore MUIS certified restaurants
+              Verified restaurants near Singapore CBD
             </Text>
-
-            {/* Search bar */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                borderRadius: Radius.lg,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.25)',
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                gap: 8,
-              }}
-            >
-              <Text style={{ fontSize: 16 }}>🔍</Text>
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search restaurants, cuisines..."
-                placeholderTextColor="rgba(255,255,255,0.55)"
+          }
+          glows={[
+            {
+              color: 'rgba(255,108,10,0.3)',
+              size: 260,
+              stop: 0.65,
+              pos: { top: -80, right: -60 },
+            },
+            {
+              color: 'rgba(11,122,79,0.2)',
+              size: 200,
+              stop: 0.7,
+              pos: { bottom: -40, left: -20 },
+            },
+          ]}
+        >
+          {/* Embedded glass search row (full-bleed) */}
+          <View style={{ paddingHorizontal: 22, paddingTop: 16, paddingBottom: 26 }}>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {/* Glass search field */}
+              <View
                 style={{
                   flex: 1,
-                  fontFamily: Fonts.body,
-                  fontSize: 14,
-                  color: Colors.white,
-                  padding: 0,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.14)',
+                  borderRadius: 14,
+                  paddingVertical: 13,
+                  paddingHorizontal: 16,
                 }}
-              />
-              {search.length > 0 && (
-                <TouchableOpacity onPress={() => setSearch('')}>
-                  <Text
-                    style={{
-                      color: 'rgba(255,255,255,0.7)',
-                      fontSize: 16,
-                    }}
-                  >
-                    ✕
-                  </Text>
-                </TouchableOpacity>
-              )}
+              >
+                <SearchIcon />
+                <TextInput
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Restaurant or cuisine…"
+                  placeholderTextColor="rgba(255,255,255,0.45)"
+                  style={{
+                    flex: 1,
+                    fontFamily: Fonts.regular,
+                    fontSize: 14,
+                    color: Colors.white,
+                    padding: 0,
+                  }}
+                />
+              </View>
+              {/* Camera button */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.16)',
+                  borderRadius: 14,
+                  paddingHorizontal: 15,
+                  justifyContent: 'center',
+                }}
+              >
+                <CameraIcon size={20} stroke="#fff" strokeWidth={1.7} r={3.2} />
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </ScreenHeader>
 
-        {/* Scanner CTA */}
-        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-          <TouchableOpacity activeOpacity={0.85}>
-            <View
+        {/* Content area */}
+        <View
+          style={{
+            backgroundColor: Colors.bg,
+            paddingTop: 16,
+            paddingHorizontal: 16,
+            paddingBottom: 100,
+          }}
+        >
+          {/* Scanner CTA — most prominent */}
+          <TouchableOpacity activeOpacity={0.9}>
+            <LinearGradient
+              colors={Gradients.scanner}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
-                backgroundColor: Colors.goldPale,
-                borderRadius: Radius.xl,
-                borderWidth: 1.5,
-                borderColor: `${Colors.gold}60`,
-                padding: 18,
+                borderRadius: 20,
+                paddingVertical: 18,
+                paddingHorizontal: 20,
+                marginBottom: 18,
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 14,
-                ...Shadow.gold,
+                gap: 16,
+                ...Shadow.greenGlow,
               }}
             >
               <View
                 style={{
                   width: 52,
                   height: 52,
-                  borderRadius: Radius.md,
-                  backgroundColor: Colors.goldLight,
+                  borderRadius: 16,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderWidth: 1,
-                  borderColor: `${Colors.gold}40`,
                 }}
               >
-                <Text style={{ fontSize: 26 }}>📷</Text>
+                <CameraIcon size={26} stroke="#fff" strokeWidth={1.8} r={3.4} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontFamily: Fonts.bodyBold,
+                    fontFamily: Fonts.extrabold,
                     fontSize: 15,
-                    color: Colors.inkMid,
-                    marginBottom: 2,
+                    color: Colors.white,
                   }}
                 >
-                  Scan Product Barcode
+                  Scan ingredient label
                 </Text>
                 <Text
                   style={{
-                    fontFamily: Fonts.body,
+                    fontFamily: Fonts.regular,
                     fontSize: 12,
-                    color: Colors.inkLight,
+                    color: 'rgba(255,255,255,0.85)',
+                    marginTop: 3,
+                    lineHeight: 18,
                   }}
                 >
-                  Instantly check halal status via MUIS database
+                  Tanya checks halal/haram from any food label instantly
                 </Text>
               </View>
-              <Text style={{ fontSize: 18, color: Colors.gold }}>›</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Cuisine filter pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 16 }}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-        >
-          <TouchableOpacity
-            key="All"
-            onPress={() => setActiveCuisine(null)}
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: Radius.pill,
-              backgroundColor:
-                activeCuisine === null ? Colors.gold : Colors.white,
-              borderWidth: 1,
-              borderColor:
-                activeCuisine === null ? Colors.gold : Colors.border,
-              marginRight: 4,
-            }}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={{
-                fontFamily:
-                  activeCuisine === null ? Fonts.bodySemiBold : Fonts.body,
-                fontSize: 13,
-                color: activeCuisine === null ? Colors.white : Colors.inkLight,
-              }}
-            >
-              All
-            </Text>
-          </TouchableOpacity>
-          {CUISINES.map((c) => (
-            <TouchableOpacity
-              key={c}
-              onPress={() =>
-                setActiveCuisine(activeCuisine === c ? null : c)
-              }
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: Radius.pill,
-                backgroundColor:
-                  activeCuisine === c ? Colors.gold : Colors.white,
-                borderWidth: 1,
-                borderColor: activeCuisine === c ? Colors.gold : Colors.border,
-                marginRight: 4,
-              }}
-              activeOpacity={0.8}
-            >
-              <Text
+              <View
                 style={{
-                  fontFamily:
-                    activeCuisine === c ? Fonts.bodySemiBold : Fonts.body,
-                  fontSize: 13,
-                  color: activeCuisine === c ? Colors.white : Colors.inkLight,
+                  backgroundColor: Colors.white,
+                  borderRadius: 12,
+                  paddingVertical: 11,
+                  paddingHorizontal: 18,
                 }}
               >
-                {c}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={{
+                    fontFamily: Fonts.extrabold,
+                    fontSize: 13,
+                    color: Colors.brand,
+                  }}
+                >
+                  Scan
+                </Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        <SectionDivider />
-
-        {/* Results count */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
-          <Text
-            style={{
-              fontFamily: Fonts.bodyMedium,
-              fontSize: 12,
-              color: Colors.inkDim,
-            }}
+          {/* Cuisine category pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
           >
-            {filtered.length} MUIS certified places nearby
-          </Text>
-        </View>
-
-        {/* Restaurant list */}
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          {filtered.map((place, i) => {
-            const tagStyle = place.tag ? TAG_COLORS[place.tag] : null;
-            return (
-              <Animated.View
-                key={place.id}
-                entering={FadeInDown.delay(i * 50).duration(380)}
-              >
-                <Card accent={Colors.gold}>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    style={{ padding: 14 }}
+            {CUISINES.map((c) => {
+              const active = activeCuisine === c;
+              return (
+                <TouchableOpacity
+                  key={c}
+                  onPress={() => setActiveCuisine(active ? null : c)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor: active ? Colors.brand : Colors.white,
+                    borderWidth: 1,
+                    borderColor: active ? Colors.brand : Colors.border,
+                    borderRadius: Radius.pill,
+                    paddingVertical: 8,
+                    paddingHorizontal: 16,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: Fonts.semibold,
+                      fontSize: 13,
+                      color: active ? Colors.white : Colors.body,
+                    }}
                   >
+                    {c}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <SectionDivider />
+
+          {/* Restaurant list */}
+          <View style={{ gap: 9 }}>
+            {filtered.map((place, i) => (
+              <Animated.View key={place.id} entering={enter(i * 50, 350)}>
+                <TouchableOpacity activeOpacity={0.85}>
+                  <View
+                    style={{
+                      backgroundColor: Colors.white,
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                      borderRadius: 18,
+                      paddingVertical: 16,
+                      paddingHorizontal: 18,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 14,
+                      ...Shadow.card,
+                    }}
+                  >
+                    {/* Emoji tile */}
                     <View
                       style={{
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        gap: 12,
+                        width: 52,
+                        height: 52,
+                        borderRadius: 16,
+                        backgroundColor: Colors.halalTile,
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      {/* Emoji icon */}
+                      <Text style={{ fontSize: 26 }}>{place.emoji}</Text>
+                    </View>
+
+                    {/* Center info */}
+                    <View style={{ flex: 1 }}>
                       <View
                         style={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: Radius.md,
-                          backgroundColor: Colors.goldPale,
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          borderWidth: 1,
-                          borderColor: `${Colors.gold}25`,
+                          gap: 8,
+                          marginBottom: 4,
                         }}
                       >
-                        <Text style={{ fontSize: 26 }}>{place.emoji}</Text>
-                      </View>
-
-                      {/* Info */}
-                      <View style={{ flex: 1 }}>
-                        <View
+                        <Text
                           style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            marginBottom: 3,
+                            fontFamily: Fonts.bold,
+                            fontSize: 15,
+                            color: Colors.heading,
                           }}
                         >
-                          <Text
+                          {place.name}
+                        </Text>
+                        {place.tag && (
+                          <View
                             style={{
-                              fontFamily: Fonts.bodyBold,
-                              fontSize: 14,
-                              color: Colors.ink,
-                              flex: 1,
+                              paddingVertical: 3,
+                              paddingHorizontal: 9,
+                              borderRadius: Radius.pill,
+                              backgroundColor: Colors.brandTint,
                             }}
-                            numberOfLines={1}
                           >
-                            {place.name}
-                          </Text>
-                          {tagStyle && (
-                            <View
+                            <Text
                               style={{
-                                paddingHorizontal: 8,
-                                paddingVertical: 2,
-                                borderRadius: Radius.pill,
-                                backgroundColor: tagStyle.bg,
-                                marginLeft: 6,
+                                fontFamily: Fonts.bold,
+                                fontSize: 10,
+                                color: Colors.brand,
                               }}
                             >
-                              <Text
-                                style={{
-                                  fontFamily: Fonts.bodySemiBold,
-                                  fontSize: 9,
-                                  color: tagStyle.text,
-                                  letterSpacing: 0.4,
-                                }}
-                              >
-                                {place.tag}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
+                              {place.tag}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
 
+                      <Text
+                        style={{
+                          fontFamily: Fonts.regular,
+                          fontSize: 12,
+                          color: Colors.muted,
+                          marginBottom: 7,
+                        }}
+                      >
+                        {place.cuisine}
+                      </Text>
+
+                      {/* Meta row */}
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 14,
+                        }}
+                      >
                         <Text
                           style={{
-                            fontFamily: Fonts.bodyMedium,
+                            fontFamily: Fonts.extrabold,
                             fontSize: 12,
-                            color: Colors.gold,
-                            marginBottom: 2,
+                            color: Colors.brand,
                           }}
                         >
-                          {place.cuisine}
+                          ✦ MUIS
                         </Text>
-
                         <Text
                           style={{
-                            fontFamily: Fonts.body,
-                            fontSize: 11.5,
-                            color: Colors.inkLight,
-                            marginBottom: 6,
+                            fontFamily: Fonts.bold,
+                            fontSize: 12,
+                            color: Colors.goldText,
                           }}
-                          numberOfLines={1}
                         >
-                          {place.district} · {place.address}
+                          ★ {place.rating}
                         </Text>
-
-                        <View
+                        <Text
                           style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            fontFamily: Fonts.regular,
+                            fontSize: 12,
+                            color: Colors.muted,
                           }}
                         >
-                          <StarRating rating={place.rating} />
-                          <Text
-                            style={{
-                              fontFamily: Fonts.bodyMedium,
-                              fontSize: 11,
-                              color: Colors.inkLight,
-                            }}
-                          >
-                            {place.distanceKm} km away
-                          </Text>
-                        </View>
+                          {place.distanceKm} km
+                        </Text>
                       </View>
                     </View>
 
-                    {/* MUIS cert badge */}
+                    {/* Chevron button */}
                     <View
                       style={{
-                        marginTop: 10,
-                        flexDirection: 'row',
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        backgroundColor: Colors.subtleFill,
+                        borderWidth: 1,
+                        borderColor: Colors.border,
                         alignItems: 'center',
-                        backgroundColor: Colors.jadePale,
-                        borderRadius: Radius.sm,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        alignSelf: 'flex-start',
-                        gap: 5,
+                        justifyContent: 'center',
                       }}
                     >
-                      <Text style={{ fontSize: 12 }}>✅</Text>
-                      <Text
-                        style={{
-                          fontFamily: Fonts.bodyMedium,
-                          fontSize: 10.5,
-                          color: Colors.jade,
-                        }}
-                      >
-                        MUIS Halal · {place.muisCertNumber}
-                      </Text>
+                      <Text style={{ fontSize: 18, color: Colors.dim }}>›</Text>
                     </View>
-                  </TouchableOpacity>
-                </Card>
+                  </View>
+                </TouchableOpacity>
               </Animated.View>
-            );
-          })}
+            ))}
 
-          {filtered.length === 0 && (
-            <View style={{ padding: 40, alignItems: 'center' }}>
-              <Text style={{ fontSize: 32, marginBottom: 12 }}>🔍</Text>
-              <Text
-                style={{
-                  fontFamily: Fonts.bodyMedium,
-                  fontSize: 14,
-                  color: Colors.inkLight,
-                  textAlign: 'center',
-                }}
-              >
-                No results for "{search}"
-              </Text>
-              <Text
-                style={{
-                  fontFamily: Fonts.body,
-                  fontSize: 12,
-                  color: Colors.inkDim,
-                  marginTop: 4,
-                  textAlign: 'center',
-                }}
-              >
-                Try a different search term or cuisine filter
-              </Text>
-            </View>
-          )}
+            {filtered.length === 0 && (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <Text style={{ fontSize: 32, marginBottom: 12 }}>🔍</Text>
+                <Text
+                  style={{
+                    fontFamily: Fonts.medium,
+                    fontSize: 14,
+                    color: Colors.muted,
+                    textAlign: 'center',
+                  }}
+                >
+                  No results for "{search}"
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: Fonts.regular,
+                    fontSize: 12,
+                    color: Colors.dim,
+                    marginTop: 4,
+                    textAlign: 'center',
+                  }}
+                >
+                  Try a different search term or cuisine filter
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

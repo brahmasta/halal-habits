@@ -12,37 +12,39 @@ export function PillToggle({ options, value, onChange }: PillToggleProps) {
     <View
       style={{
         flexDirection: 'row',
-        backgroundColor: Colors.bgDeep,
+        backgroundColor: Colors.pillTrack,
         borderRadius: Radius.pill,
         padding: 4,
       }}
     >
-      {options.map((opt, i) => (
-        <TouchableOpacity
-          key={opt}
-          onPress={() => onChange(i as 0 | 1)}
-          style={{
-            flex: 1,
-            paddingVertical: 9,
-            paddingHorizontal: 16,
-            borderRadius: Radius.pill,
-            alignItems: 'center',
-            backgroundColor: value === i ? Colors.jade : 'transparent',
-            ...(value === i ? Shadow.jade : {}),
-          }}
-          activeOpacity={0.8}
-        >
-          <Text
+      {options.map((opt, i) => {
+        const active = value === i;
+        return (
+          <TouchableOpacity
+            key={opt}
+            onPress={() => onChange(i as 0 | 1)}
             style={{
-              fontFamily: value === i ? Fonts.bodySemiBold : Fonts.bodyMedium,
-              fontSize: 13.5,
-              color: value === i ? Colors.white : Colors.inkLight,
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: Radius.pill,
+              alignItems: 'center',
+              backgroundColor: active ? Colors.brand : 'transparent',
+              ...(active ? Shadow.greenGlowSoft : {}),
             }}
+            activeOpacity={0.85}
           >
-            {opt}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={{
+                fontFamily: Fonts.bold,
+                fontSize: 13,
+                color: active ? Colors.white : Colors.muted,
+              }}
+            >
+              {opt}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }

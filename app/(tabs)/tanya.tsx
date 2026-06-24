@@ -11,17 +11,20 @@ import {
   Animated as RNAnimated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { enter } from '../../components/ui/enter';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { StarPattern } from '../../components/ui/StarPattern';
-import { PillToggle } from '../../components/ui/PillToggle';
-import { Colors, Fonts, Radius, Shadow } from '../../constants/theme';
+import { Glow } from '../../components/ui/Glow';
+import { Colors, Fonts, Gradients, Radius, Shadow } from '../../constants/theme';
 import {
   sendTanyaMessage,
   Message,
 } from '../../services/anthropicApi';
 
 const W = Dimensions.get('window').width;
+const GRAD_START = { x: 0, y: 0 };
+const GRAD_END = { x: 1, y: 1 };
 
 const SUGGESTED_QUESTIONS = [
   'What is Tahajjud?',
@@ -31,30 +34,28 @@ const SUGGESTED_QUESTIONS = [
   'Remind me for Asar',
 ];
 
-function ChatIcon({ color, size }: { color: string; size: number }) {
+// Chat-bubble glyph with three colored dots. Sized via width/height props.
+function ChatBubble({ size }: { size: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 22 22" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 26 26" fill="none">
       <Path
-        d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-        stroke={color}
-        strokeWidth={1.7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M13 3C8 3 4 6.13 4 10c0 2.2 1.2 4.2 3.1 5.5V19l3.8-2.4c.68.1 1.38.16 2.1.16 5 0 9-3.13 9-7S18 3 13 3z"
+        fill="rgba(255,255,255,0.95)"
       />
-      <Circle cx="8" cy="11" r="1" fill={color} />
-      <Circle cx="12" cy="11" r="1" fill={color} />
-      <Circle cx="16" cy="11" r="1" fill={color} />
+      <Circle cx={9.5} cy={10} r={1.3} fill="#0B7A4F" />
+      <Circle cx={13} cy={10} r={1.3} fill="#921FFF" />
+      <Circle cx={16.5} cy={10} r={1.3} fill="#0B7A4F" />
     </Svg>
   );
 }
 
-function SendIcon({ color, size }: { color: string; size: number }) {
+function SendIcon({ size }: { size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
         d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
-        stroke={color}
-        strokeWidth={2}
+        stroke="#fff"
+        strokeWidth={2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -104,8 +105,8 @@ function TypingIndicator() {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
       }}
     >
       {[dot1, dot2, dot3].map((dot, i) => (
@@ -115,7 +116,7 @@ function TypingIndicator() {
             width: 7,
             height: 7,
             borderRadius: 3.5,
-            backgroundColor: Colors.jadeMid,
+            backgroundColor: Colors.brand,
             opacity: dot,
             transform: [
               {
@@ -132,10 +133,32 @@ function TypingIndicator() {
   );
 }
 
+// Small gradient avatar square shown beside assistant bubbles.
+function TanyaAvatar() {
+  return (
+    <LinearGradient
+      colors={Gradients.brand}
+      start={GRAD_START}
+      end={GRAD_END}
+      style={{
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 2,
+      }}
+    >
+      <ChatBubble size={15} />
+    </LinearGradient>
+  );
+}
+
 export default function TanyaScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [streaming, setStreaming] = useState('');
   const [lang, setLang] = useState<0 | 1>(0);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -147,6 +170,8 @@ export default function TanyaScreen() {
     }, 100);
   };
 
+  const toggleLang = () => setLang((prev) => (prev === 0 ? 1 : 0));
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
     const userMsg: Message = { role: 'user', content: text.trim() };
@@ -154,6 +179,7 @@ export default function TanyaScreen() {
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
+    setStreaming('');
     scrollToBottom();
 
     let responseText = '';
@@ -161,18 +187,23 @@ export default function TanyaScreen() {
       newMessages,
       (chunk) => {
         responseText += chunk;
+        setStreaming(responseText);
+        scrollToBottom();
       },
       () => {
         setMessages((prev) => [
           ...prev,
           { role: 'assistant', content: responseText },
         ]);
+        setStreaming('');
         setIsLoading(false);
         scrollToBottom();
       },
       currentLang
     );
   };
+
+  const canSend = !!input.trim() && !isLoading;
 
   return (
     <SafeAreaView
@@ -187,179 +218,214 @@ export default function TanyaScreen() {
         {/* Header */}
         <View
           style={{
-            backgroundColor: Colors.jade,
+            backgroundColor: Colors.headerDark,
             paddingHorizontal: 22,
-            paddingTop: 24,
-            paddingBottom: 20,
+            paddingTop: 20,
+            paddingBottom: 22,
             overflow: 'hidden',
             position: 'relative',
           }}
         >
-          <StarPattern opacity={0.06} width={W} height={160} />
-          <View
-            style={{
-              position: 'absolute',
-              top: -40,
-              right: -40,
-              width: 140,
-              height: 140,
-              borderRadius: 70,
-              backgroundColor: 'rgba(255,255,255,0.07)',
-            }}
+          <Glow
+            color="rgba(11,122,79,0.26)"
+            size={220}
+            stop={0.7}
+            style={{ top: -60, right: -40 }}
           />
 
-          <View
-            style={{
-              position: 'relative',
-              zIndex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 14,
-            }}
-          >
-            {/* Avatar */}
+          <View style={{ position: 'relative', zIndex: 2 }}>
             <View
               style={{
-                width: 52,
-                height: 52,
-                borderRadius: 26,
-                backgroundColor: Colors.white,
+                flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'center',
-                ...Shadow.jade,
+                gap: 14,
               }}
             >
-              <ChatIcon color={Colors.jade} size={26} />
-            </View>
-
-            {/* Title */}
-            <View style={{ flex: 1 }}>
-              <Text
+              {/* Avatar */}
+              <LinearGradient
+                colors={Gradients.brand}
+                start={GRAD_START}
+                end={GRAD_END}
                 style={{
-                  fontFamily: Fonts.serif,
-                  fontSize: 26,
-                  color: Colors.white,
-                  lineHeight: 30,
-                }}
-              >
-                Tanya
-              </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
                   alignItems: 'center',
-                  gap: 6,
-                  marginTop: 2,
+                  justifyContent: 'center',
+                  ...Shadow.greenGlow,
                 }}
               >
-                <View
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: 3.5,
-                    backgroundColor: '#4ADE80',
-                  }}
-                />
+                <ChatBubble size={24} />
+              </LinearGradient>
+
+              {/* Title + status */}
+              <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontFamily: Fonts.body,
-                    fontSize: 12,
-                    color: 'rgba(255,255,255,0.75)',
+                    fontFamily: Fonts.extrabold,
+                    fontSize: 24,
+                    color: Colors.white,
+                    letterSpacing: 0.7,
                   }}
                 >
-                  AI Islamic Companion · Active
+                  Tanya
                 </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 2,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: Colors.brandBright,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      fontFamily: Fonts.medium,
+                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.6)',
+                    }}
+                  >
+                    AI Islamic Companion · Active
+                  </Text>
+                </View>
               </View>
+
+              {/* Language toggle */}
+              <TouchableOpacity
+                onPress={toggleLang}
+                activeOpacity={0.8}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.16)',
+                  borderRadius: Radius.pill,
+                  paddingVertical: 7,
+                  paddingHorizontal: 14,
+                }}
+              >
+                <Text style={{ fontSize: 12, fontFamily: Fonts.bold }}>
+                  <Text
+                    style={{
+                      color:
+                        currentLang === 'en'
+                          ? Colors.brandBright
+                          : 'rgba(255,255,255,0.5)',
+                      fontFamily: Fonts.bold,
+                    }}
+                  >
+                    EN
+                  </Text>
+                  <Text
+                    style={{
+                      color: 'rgba(255,255,255,0.4)',
+                      fontFamily: Fonts.bold,
+                    }}
+                  >
+                    {' / '}
+                  </Text>
+                  <Text
+                    style={{
+                      color:
+                        currentLang === 'bm'
+                          ? Colors.brandBright
+                          : 'rgba(255,255,255,0.5)',
+                      fontFamily: Fonts.bold,
+                    }}
+                  >
+                    BM
+                  </Text>
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Language toggle */}
-            <View style={{ width: 110 }}>
-              <PillToggle
-                options={['EN', 'BM']}
-                value={lang}
-                onChange={setLang}
-              />
+            {/* Disclaimer */}
+            <View
+              style={{
+                marginTop: 14,
+                borderLeftWidth: 2,
+                borderLeftColor: Colors.brand,
+                paddingLeft: 14,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.regular,
+                  fontStyle: 'italic',
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.6)',
+                  lineHeight: 19,
+                }}
+              >
+                &quot;Like a knowledgeable friend, not a mufti.&quot; For binding
+                rulings, always consult a qualified ustaz.
+              </Text>
             </View>
           </View>
-        </View>
-
-        {/* Disclaimer */}
-        <View
-          style={{
-            marginHorizontal: 16,
-            marginTop: 10,
-            backgroundColor: Colors.goldPale,
-            borderRadius: Radius.md,
-            borderLeftWidth: 3,
-            borderLeftColor: Colors.gold,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: Fonts.serifItalic,
-              fontSize: 12.5,
-              color: Colors.inkMid,
-              lineHeight: 18,
-            }}
-          >
-            Tanya offers general Islamic guidance. For fatwas or binding rulings,
-            please consult a qualified ustaz or Mufti.
-          </Text>
         </View>
 
         {/* Chat area */}
         <ScrollView
           ref={scrollRef}
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: Colors.bg }}
           contentContainerStyle={{
             paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: 12,
+            paddingTop: 16,
+            paddingBottom: 10,
           }}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
         >
           {/* Suggested questions */}
           {messages.length < 2 && !isLoading && (
-            <Animated.View entering={FadeInDown.duration(400)}>
+            <Animated.View entering={enter(0, 400)}>
               <Text
                 style={{
-                  fontFamily: Fonts.bodyMedium,
-                  fontSize: 11.5,
-                  color: Colors.inkDim,
-                  letterSpacing: 0.8,
+                  fontFamily: Fonts.extrabold,
+                  fontSize: 10,
+                  color: Colors.dim,
+                  letterSpacing: 1.2,
                   textTransform: 'uppercase',
                   marginBottom: 10,
-                  textAlign: 'center',
                 }}
               >
-                Suggested Questions
+                Suggested
               </Text>
               <View
-                style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 16 }}
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  marginBottom: 12,
+                }}
               >
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <TouchableOpacity
                     key={q}
                     onPress={() => sendMessage(q)}
                     style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
+                      paddingHorizontal: 15,
+                      paddingVertical: 9,
                       backgroundColor: Colors.white,
-                      borderRadius: Radius.pill,
+                      borderRadius: Radius.btn,
                       borderWidth: 1,
                       borderColor: Colors.border,
-                      ...Shadow.card,
+                      ...Shadow.cardSubtle,
                     }}
                     activeOpacity={0.8}
                   >
                     <Text
                       style={{
-                        fontFamily: Fonts.bodyMedium,
-                        fontSize: 12.5,
-                        color: Colors.inkMid,
+                        fontFamily: Fonts.semibold,
+                        fontSize: 12,
+                        color: Colors.body,
                       }}
                     >
                       {q}
@@ -376,64 +442,77 @@ export default function TanyaScreen() {
             return (
               <Animated.View
                 key={i}
-                entering={FadeInDown.delay(0).duration(300)}
+                entering={enter(0, 300)}
                 style={{
                   flexDirection: 'row',
                   justifyContent: isUser ? 'flex-end' : 'flex-start',
-                  marginBottom: 10,
+                  marginBottom: 12,
                   alignItems: 'flex-end',
                   gap: 8,
                 }}
               >
-                {/* Tanya avatar */}
-                {!isUser && (
+                {!isUser && <TanyaAvatar />}
+
+                {isUser ? (
+                  <LinearGradient
+                    colors={Gradients.brand}
+                    start={GRAD_START}
+                    end={GRAD_END}
+                    style={{
+                      maxWidth: W * 0.78,
+                      borderTopLeftRadius: 20,
+                      borderTopRightRadius: 20,
+                      borderBottomRightRadius: 5,
+                      borderBottomLeftRadius: 20,
+                      paddingHorizontal: 16,
+                      paddingVertical: 13,
+                      ...Shadow.greenGlowSoft,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: Fonts.semibold,
+                        fontSize: 14,
+                        color: Colors.white,
+                        lineHeight: 22,
+                      }}
+                    >
+                      {msg.content}
+                    </Text>
+                  </LinearGradient>
+                ) : (
                   <View
                     style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: 15,
-                      backgroundColor: Colors.jadeLight,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 2,
+                      maxWidth: W * 0.78,
+                      backgroundColor: Colors.white,
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                      borderTopLeftRadius: 20,
+                      borderTopRightRadius: 20,
+                      borderBottomRightRadius: 20,
+                      borderBottomLeftRadius: 5,
+                      paddingHorizontal: 16,
+                      paddingVertical: 13,
+                      ...Shadow.card,
                     }}
                   >
-                    <Text style={{ fontSize: 14 }}>🌙</Text>
+                    <Text
+                      style={{
+                        fontFamily: Fonts.regular,
+                        fontSize: 14,
+                        color: Colors.heading,
+                        lineHeight: 22,
+                      }}
+                    >
+                      {msg.content}
+                    </Text>
                   </View>
                 )}
-
-                <View
-                  style={{
-                    maxWidth: W * 0.72,
-                    borderRadius: isUser
-                      ? Radius.lg
-                      : Radius.lg,
-                    borderBottomRightRadius: isUser ? 4 : Radius.lg,
-                    borderBottomLeftRadius: isUser ? Radius.lg : 4,
-                    backgroundColor: isUser ? Colors.jade : Colors.white,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    ...(isUser ? Shadow.jade : Shadow.card),
-                    borderWidth: isUser ? 0 : 1,
-                    borderColor: Colors.border,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: Fonts.body,
-                      fontSize: 14,
-                      color: isUser ? Colors.white : Colors.ink,
-                      lineHeight: 20,
-                    }}
-                  >
-                    {msg.content}
-                  </Text>
-                </View>
               </Animated.View>
             );
           })}
 
-          {/* Typing indicator */}
+          {/* Live streaming reply + typing indicator */}
           {isLoading && (
             <View
               style={{
@@ -441,32 +520,40 @@ export default function TanyaScreen() {
                 justifyContent: 'flex-start',
                 alignItems: 'flex-end',
                 gap: 8,
-                marginBottom: 10,
+                marginBottom: 12,
               }}
             >
+              <TanyaAvatar />
               <View
                 style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  backgroundColor: Colors.jadeLight,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 14 }}>🌙</Text>
-              </View>
-              <View
-                style={{
+                  maxWidth: W * 0.78,
                   backgroundColor: Colors.white,
-                  borderRadius: Radius.lg,
-                  borderBottomLeftRadius: 4,
                   borderWidth: 1,
                   borderColor: Colors.border,
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  borderBottomRightRadius: 20,
+                  borderBottomLeftRadius: 5,
                   ...Shadow.card,
+                  ...(streaming
+                    ? { paddingHorizontal: 16, paddingVertical: 13 }
+                    : {}),
                 }}
               >
-                <TypingIndicator />
+                {streaming ? (
+                  <Text
+                    style={{
+                      fontFamily: Fonts.regular,
+                      fontSize: 14,
+                      color: Colors.heading,
+                      lineHeight: 22,
+                    }}
+                  >
+                    {streaming}
+                  </Text>
+                ) : (
+                  <TypingIndicator />
+                )}
               </View>
             </View>
           )}
@@ -479,61 +566,69 @@ export default function TanyaScreen() {
               flexDirection: 'row',
               alignItems: 'center',
               paddingHorizontal: 16,
-              paddingVertical: 10,
+              paddingTop: 10,
+              paddingBottom: 10,
               gap: 10,
               borderTopWidth: 1,
               borderTopColor: Colors.border,
               backgroundColor: Colors.white,
             }}
           >
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder={
-                currentLang === 'bm'
-                  ? 'Taip soalan anda...'
-                  : 'Ask anything Islamic...'
-              }
-              placeholderTextColor={Colors.inkDim}
+            <View
               style={{
                 flex: 1,
-                backgroundColor: Colors.bgWarm,
-                borderRadius: Radius.pill,
+                backgroundColor: Colors.subtleFill,
+                borderWidth: 1,
+                borderColor: Colors.border,
+                borderRadius: Radius.input,
                 paddingHorizontal: 16,
-                paddingVertical: 11,
-                fontFamily: Fonts.body,
-                fontSize: 14,
-                color: Colors.ink,
-                minHeight: 44,
-                maxHeight: 100,
+                paddingVertical: 12,
               }}
-              multiline
-              onSubmitEditing={() => sendMessage(input)}
-              returnKeyType="send"
-              blurOnSubmit
-            />
+            >
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder={
+                  currentLang === 'bm'
+                    ? 'Tanya apa-apa sahaja…'
+                    : 'Ask Tanya anything…'
+                }
+                placeholderTextColor={Colors.dim}
+                style={{
+                  fontFamily: Fonts.regular,
+                  fontSize: 14,
+                  color: Colors.heading,
+                  maxHeight: 100,
+                  padding: 0,
+                }}
+                multiline
+                onSubmitEditing={() => sendMessage(input)}
+                returnKeyType="send"
+                blurOnSubmit
+              />
+            </View>
 
             <TouchableOpacity
               onPress={() => sendMessage(input)}
-              disabled={!input.trim() || isLoading}
-              style={{
-                width: 46,
-                height: 46,
-                borderRadius: 23,
-                backgroundColor:
-                  input.trim() && !isLoading ? Colors.jade : Colors.bgDeep,
-                alignItems: 'center',
-                justifyContent: 'center',
-                ...(input.trim() && !isLoading ? Shadow.jade : {}),
-              }}
-              activeOpacity={0.8}
+              disabled={!canSend}
+              activeOpacity={0.85}
+              style={{ opacity: canSend ? 1 : 0.5 }}
             >
-              <SendIcon
-                color={
-                  input.trim() && !isLoading ? Colors.white : Colors.inkDim
-                }
-                size={20}
-              />
+              <LinearGradient
+                colors={Gradients.brand}
+                start={GRAD_START}
+                end={GRAD_END}
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 15,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  ...Shadow.greenGlow,
+                }}
+              >
+                <SendIcon size={18} />
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

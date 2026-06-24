@@ -4,7 +4,7 @@ import { Colors, Radius, Shadow } from '@/constants/theme';
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
-  accent?: string;
+  accent?: string; // when set, border tints to the accent
 }
 
 export function Card({ children, style, accent }: CardProps) {
@@ -12,10 +12,10 @@ export function Card({ children, style, accent }: CardProps) {
     <View
       style={[
         {
-          backgroundColor: Colors.white,
-          borderRadius: Radius.lg,
+          backgroundColor: Colors.card,
+          borderRadius: Radius.card,
           borderWidth: 1,
-          borderColor: accent ? `${accent}40` : Colors.border,
+          borderColor: accent ? `${accent}47` : Colors.border,
           ...Shadow.card,
         },
         style,

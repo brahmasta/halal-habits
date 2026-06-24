@@ -1,57 +1,108 @@
+// HalalHabits — Unified UI design system, green brand override.
+// Dark near-black headers with colored radial glows over a light #FAFAFA
+// content area of white soft-UI cards. Plus Jakarta Sans throughout (no serif).
+
 export const Colors = {
-  bg: '#F9F6F1',
-  bgWarm: '#F3EDE3',
-  bgDeep: '#EDE4D6',
-  jade: '#1A5C45',
-  jadeMid: '#237558',
-  jadeLight: '#EAF2EE',
-  jadePale: '#F2F8F5',
-  jadeGlow: 'rgba(26,92,69,0.12)',
-  gold: '#B8822A',
-  goldWarm: '#C9952E',
-  goldLight: '#FBF4E6',
-  goldPale: '#FEF9F0',
-  ink: '#1C1208',
-  inkMid: '#3D2E1A',
-  inkLight: '#7A6B55',
-  inkDim: '#A8998A',
-  sky: '#1A6080',
-  skyLight: '#EBF4F8',
-  rose: '#8C3030',
-  roseLight: '#F8EEEE',
+  // Brand — green
+  brand: '#0B7A4F', // deep jade: active states, primary fills, prayer time, badges
+  brandBright: '#25D092', // mint: glows, next bar, status dots, gradient end
+  brandDeep: '#0B4C35', // gradient start (hero)
+  brandTint: '#E2F7EF', // active nav bg, next-prayer card bg, badges
+  brandOnDark: '#5FE0AE', // eyebrow + progress abbr on dark headers
+
+  // Secondary accents (NOT red)
+  purple: '#921FFF',
+  purpleTint: '#F2E8FF',
+  blue: '#5050FA',
+  blueTint: '#E9E9FF',
+  blueOnDark: '#7A8DFF', // masjid eyebrow on dark
+  orange: '#FF6C0A',
+  orangeTint: '#FFE9D9',
+  gold: '#FCAE30',
+  goldText: '#9A6206', // jemaah times, star ratings
+  goldEyebrow: '#FFBF57', // halal eyebrow + moon star
+
+  // Neutrals & surfaces
+  bg: '#FAFAFA', // page background
+  card: '#FFFFFF', // card surface
+  headerDark: '#12151A', // dark header surface
+  mapSurface: '#1B2230',
+  mapGradFrom: '#20303A',
+  mapGradTo: '#1A2A33',
+  heading: '#242A33', // heading text
+  body: '#323B47', // body / strong
+  muted: '#5B6E88', // muted text
+  dim: '#9AA7B8', // dim / placeholder
+  border: '#E9EFF7', // hairline border
+  borderStrong: '#C1D0E5', // stronger border / star glyph
+  subtleFill: '#F5F7F9', // chevron btn, input bg
+  pillTrack: '#F1F1F1', // pill toggle track
+  halalTile: '#FEF1DC', // halal emoji tile bg
+
   white: '#FFFFFF',
-  border: 'rgba(60,40,15,0.10)',
-  borderWarm: 'rgba(60,40,15,0.18)',
-};
+} as const;
 
+// Brand gradients (135deg). Use with expo-linear-gradient: start {0,0} end {1,1}.
+export const Gradients = {
+  hero: ['#0B4C35', '#0B7A4F', '#25D092'] as const, // next-prayer card
+  heroLocations: [0, 0.48, 1] as const,
+  brand: ['#0B7A4F', '#25D092'] as const, // avatar / user bubble / send / sunnah accents
+  scanner: ['#25D092', '#0B7A4F'] as const, // halal scanner CTA
+  map: ['#20303A', '#1A2A33'] as const,
+} as const;
+
+// Plus Jakarta Sans — loaded in app/_layout.tsx.
 export const Fonts = {
-  serif: 'CormorantGaramond_600SemiBold',
-  serifBold: 'CormorantGaramond_700Bold',
-  serifItalic: 'CormorantGaramond_600SemiBold_Italic',
-  body: 'Outfit_400Regular',
-  bodyMedium: 'Outfit_500Medium',
-  bodySemiBold: 'Outfit_600SemiBold',
-  bodyBold: 'Outfit_700Bold',
-  bodyBlack: 'Outfit_800ExtraBold',
-};
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold', // display numerals, titles
+} as const;
 
-export const Radius = { sm: 10, md: 14, lg: 18, xl: 22, pill: 50 };
+export const Radius = {
+  sm: 10,
+  btn: 12,
+  input: 14,
+  navIcon: 14,
+  tile: 16,
+  card: 18,
+  map: 20,
+  hero: 24,
+  pill: 999,
+} as const;
 
+// Warm-neutral soft shadows. RN uses shadow* (iOS) + elevation (Android).
 export const Shadow = {
+  // --shadow-sm
   card: {
-    shadowColor: '#1C1208', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+    shadowColor: '#111111',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cardHover: {
-    shadowColor: '#1C1208', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10, shadowRadius: 12, elevation: 5,
+  // --shadow-xsm
+  cardSubtle: {
+    shadowColor: '#111111',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  jade: {
-    shadowColor: '#1A5C45', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22, shadowRadius: 12, elevation: 6,
+  // green glow — next-prayer card / send / scanner / active nav
+  greenGlow: {
+    shadowColor: '#0B7A4F',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    elevation: 8,
   },
-  gold: {
-    shadowColor: '#B8822A', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.20, shadowRadius: 12, elevation: 5,
+  greenGlowSoft: {
+    shadowColor: '#0B7A4F',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 5,
   },
-};
+} as const;
