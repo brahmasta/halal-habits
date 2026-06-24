@@ -14,7 +14,10 @@ import Animated from 'react-native-reanimated';
 import { enter } from '../../components/ui/enter';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { SectionDivider } from '../../components/ui/SectionDivider';
+import { MapPanel } from '../../components/ui/MapPanel';
+import { MapMarkerData } from '../../components/ui/MapPanel.types';
 import { useHalalFood } from '../../hooks/useHalalFood';
+import { SG_CENTER } from '../../services/places';
 import { Colors, Fonts, Gradients, Radius, Shadow } from '../../constants/theme';
 
 const CUISINES = [
@@ -81,6 +84,14 @@ export default function HalalScreen() {
       );
     return matchSearch && matchCuisine;
   });
+
+  const markers: MapMarkerData[] = filtered.map((p) => ({
+    id: p.id,
+    lat: p.coordinates.lat,
+    lng: p.coordinates.lng,
+    color: p.certified ? Colors.brand : Colors.orange,
+    label: p.name,
+  }));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }} edges={['top']}>
@@ -251,6 +262,49 @@ export default function HalalScreen() {
               </View>
             </LinearGradient>
           </TouchableOpacity>
+
+          {/* Map of nearby halal places */}
+          <View
+            style={{
+              marginBottom: 18,
+              borderRadius: 20,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: Colors.border,
+              position: 'relative',
+              ...Shadow.card,
+            }}
+          >
+            <MapPanel
+              markers={markers}
+              center={SG_CENTER}
+              height={160}
+              zoom={15}
+              rounded="all"
+            />
+            <View
+              style={{
+                position: 'absolute',
+                bottom: 10,
+                left: 12,
+                backgroundColor: Colors.white,
+                borderRadius: 10,
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                ...Shadow.cardSubtle,
+              }}
+            >
+              <Text
+                style={{
+                  color: Colors.brand,
+                  fontSize: 11,
+                  fontFamily: Fonts.extrabold,
+                }}
+              >
+                {filtered.length} halal places nearby
+              </Text>
+            </View>
+          </View>
 
           {/* Cuisine category pills */}
           <ScrollView

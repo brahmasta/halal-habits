@@ -9,14 +9,16 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { enter } from '../../components/ui/enter';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { SectionDivider } from '../../components/ui/SectionDivider';
+import { MapPanel } from '../../components/ui/MapPanel';
+import { MapMarkerData } from '../../components/ui/MapPanel.types';
 import { useMosques } from '../../hooks/useMosques';
-import { Colors, Fonts, Gradients, Radius, Shadow } from '../../constants/theme';
+import { SG_CENTER } from '../../services/places';
+import { Colors, Fonts, Radius, Shadow } from '../../constants/theme';
 
 const W = Dimensions.get('window').width;
 
@@ -24,50 +26,6 @@ type PlaceType = 'Masjid' | 'Musholla';
 type Filter = 'All' | PlaceType;
 
 
-let MapView: React.ComponentType<any> | null = null;
-let MapMarker: React.ComponentType<any> | null = null;
-try {
-  const rn_maps = require('react-native-maps');
-  MapView = rn_maps.default;
-  MapMarker = rn_maps.Marker;
-} catch {
-  // Maps not available
-}
-
-// Teardrop pin used in the web map fallback.
-function TeardropPin({
-  color,
-  size = 22,
-  selected = false,
-  style,
-}: {
-  color: string;
-  size?: number;
-  selected?: boolean;
-  style?: any;
-}) {
-  return (
-    <View
-      style={[
-        {
-          position: 'absolute',
-          width: size,
-          height: size,
-          backgroundColor: color,
-          borderWidth: 2.5,
-          borderColor: '#fff',
-          borderTopLeftRadius: size / 2,
-          borderTopRightRadius: size / 2,
-          borderBottomLeftRadius: size / 2,
-          borderBottomRightRadius: 0,
-          transform: [{ rotate: '-45deg' }],
-        },
-        selected ? Shadow.greenGlowSoft : null,
-        style,
-      ]}
-    />
-  );
-}
 
 export default function MasjidScreen() {
   const [filter, setFilter] = useState<Filter>('All');
@@ -83,6 +41,14 @@ export default function MasjidScreen() {
   });
 
   const filters: Filter[] = ['All', 'Masjid', 'Musholla'];
+
+  const markers: MapMarkerData[] = filtered.map((m) => ({
+    id: m.id,
+    lat: m.coordinates.lat,
+    lng: m.coordinates.lng,
+    color: m.type === 'Masjid' ? Colors.brand : Colors.blue,
+    label: m.name,
+  }));
 
   return (
     <SafeAreaView
@@ -130,168 +96,44 @@ export default function MasjidScreen() {
             style={{
               marginTop: 18,
               marginHorizontal: 16,
-              height: 144,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               overflow: 'hidden',
               borderWidth: 1,
               borderColor: 'rgba(255,255,255,0.1)',
+              position: 'relative',
             }}
           >
-            {MapView ? (
-              <MapView
-                style={{ flex: 1 }}
-                initialRegion={{
-                  latitude: 1.3,
-                  longitude: 103.8565,
-                  latitudeDelta: 0.04,
-                  longitudeDelta: 0.04,
+            <MapPanel
+              markers={markers}
+              center={SG_CENTER}
+              height={144}
+              zoom={14}
+              rounded="top"
+            />
+            {/* Bottom-right pill */}
+            <View
+              style={{
+                position: 'absolute',
+                bottom: 10,
+                right: 12,
+                backgroundColor: Colors.white,
+                borderRadius: 10,
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                ...Shadow.cardSubtle,
+              }}
+            >
+              <Text
+                style={{
+                  color: Colors.brand,
+                  fontSize: 11,
+                  fontFamily: Fonts.extrabold,
                 }}
               >
-                {MapMarker &&
-                  mosques.map((m) => (
-                    <MapMarker
-                      key={m.id}
-                      coordinate={{
-                        latitude: m.coordinates.lat,
-                        longitude: m.coordinates.lng,
-                      }}
-                      title={m.name}
-                    />
-                  ))}
-              </MapView>
-            ) : (
-              <View style={{ flex: 1 }}>
-                <LinearGradient
-                  colors={Gradients.map}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{ ...StyleAbsoluteFill }}
-                />
-
-                {/* Faint blue grid lines */}
-                <View
-                  pointerEvents="none"
-                  style={{ ...StyleAbsoluteFill, opacity: 0.5 }}
-                >
-                  {/* 3 horizontal */}
-                  {[0.25, 0.5, 0.75].map((t) => (
-                    <View
-                      key={`h${t}`}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        top: `${t * 100}%`,
-                        height: 1,
-                        backgroundColor: 'rgba(80,80,250,0.3)',
-                      }}
-                    />
-                  ))}
-                  {/* 3 vertical */}
-                  {[0.25, 0.5, 0.75].map((t) => (
-                    <View
-                      key={`v${t}`}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        bottom: 0,
-                        left: `${t * 100}%`,
-                        width: 1,
-                        backgroundColor: 'rgba(80,80,250,0.3)',
-                      }}
-                    />
-                  ))}
-                </View>
-
-                {/* Green route line */}
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: 'absolute',
-                    left: 24,
-                    right: 24,
-                    top: '52%',
-                    height: 4,
-                    borderRadius: 2,
-                    backgroundColor: 'rgba(11,122,79,0.4)',
-                  }}
-                />
-
-                {/* Four teardrop pins */}
-                <TeardropPin
-                  color="#0B7A4F"
-                  size={30}
-                  selected
-                  style={{ top: 30, left: '40%' }}
-                />
-                <TeardropPin
-                  color="#5050FA"
-                  size={22}
-                  style={{ top: 64, left: '20%' }}
-                />
-                <TeardropPin
-                  color="#FCAE30"
-                  size={22}
-                  style={{ top: 40, right: '20%' }}
-                />
-                <TeardropPin
-                  color="#25D092"
-                  size={22}
-                  style={{ bottom: 28, right: '34%' }}
-                />
-
-                {/* You-are-here dot with outer ring */}
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: 'absolute',
-                    bottom: 30,
-                    left: '24%',
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: 'rgba(11,122,79,0.25)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 13,
-                      height: 13,
-                      borderRadius: 6.5,
-                      backgroundColor: Colors.white,
-                      borderWidth: 3,
-                      borderColor: Colors.brand,
-                    }}
-                  />
-                </View>
-
-                {/* Bottom-right pill */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: 10,
-                    right: 12,
-                    backgroundColor: Colors.white,
-                    borderRadius: 10,
-                    paddingVertical: 6,
-                    paddingHorizontal: 12,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: Colors.brand,
-                      fontSize: 11,
-                      fontFamily: Fonts.extrabold,
-                    }}
-                  >
-                    Open full map ›
-                  </Text>
-                </View>
-              </View>
-            )}
+                Open full map ›
+              </Text>
+            </View>
           </View>
         </ScreenHeader>
 
@@ -553,11 +395,3 @@ export default function MasjidScreen() {
     </SafeAreaView>
   );
 }
-
-const StyleAbsoluteFill = {
-  position: 'absolute' as const,
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-};
