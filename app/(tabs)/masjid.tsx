@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
-  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +15,7 @@ import Animated from 'react-native-reanimated';
 import { enter } from '../../components/ui/enter';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { SectionDivider } from '../../components/ui/SectionDivider';
+import { useMosques } from '../../hooks/useMosques';
 import { Colors, Fonts, Gradients, Radius, Shadow } from '../../constants/theme';
 
 const W = Dimensions.get('window').width;
@@ -22,95 +23,6 @@ const W = Dimensions.get('window').width;
 type PlaceType = 'Masjid' | 'Musholla';
 type Filter = 'All' | PlaceType;
 
-interface MasjidPlace {
-  id: string;
-  name: string;
-  type: PlaceType;
-  area: string;
-  address: string;
-  distanceKm: number;
-  jemaahTime?: string;
-  emoji: string;
-}
-
-const MASJIDS: MasjidPlace[] = [
-  {
-    id: '1',
-    name: 'Masjid Sultan',
-    type: 'Masjid',
-    area: 'Arab Street',
-    address: '3 Muscat St, Singapore 198833',
-    distanceKm: 1.1,
-    jemaahTime: 'Zohor 1:30 PM',
-    emoji: '🕌',
-  },
-  {
-    id: '2',
-    name: 'Masjid Hajjah Fatimah',
-    type: 'Masjid',
-    area: 'Jalan Sultan',
-    address: '4001 Beach Rd, Singapore 199597',
-    distanceKm: 1.4,
-    jemaahTime: 'Maghrib 7:10 PM',
-    emoji: '🕌',
-  },
-  {
-    id: '3',
-    name: 'Masjid Alkaff Kampung Melayu',
-    type: 'Masjid',
-    area: 'Geylang',
-    address: '80 Lorong 35, Geylang',
-    distanceKm: 3.2,
-    jemaahTime: 'Asar 4:00 PM',
-    emoji: '🕌',
-  },
-  {
-    id: '4',
-    name: 'Masjid Omar Kampong Melaka',
-    type: 'Masjid',
-    area: 'Chinatown',
-    address: '1 Omar Rd, Singapore 059701',
-    distanceKm: 2.0,
-    jemaahTime: 'Dhuhr 1:15 PM',
-    emoji: '🕌',
-  },
-  {
-    id: '5',
-    name: 'Musholla Bugis+',
-    type: 'Musholla',
-    area: 'Bugis',
-    address: '201 Victoria St, #04-10 Bugis+',
-    distanceKm: 0.5,
-    emoji: '🏪',
-  },
-  {
-    id: '6',
-    name: 'Musholla Raffles City',
-    type: 'Musholla',
-    area: 'City Hall',
-    address: '252 North Bridge Rd, #03-11',
-    distanceKm: 0.8,
-    emoji: '🏪',
-  },
-  {
-    id: '7',
-    name: 'Musholla Marina Square',
-    type: 'Musholla',
-    area: 'Marina',
-    address: '6 Raffles Blvd, #03-100',
-    distanceKm: 1.2,
-    emoji: '🏪',
-  },
-  {
-    id: '8',
-    name: 'Musholla Suntec City',
-    type: 'Musholla',
-    area: 'City Hall',
-    address: '3 Temasek Blvd, Level 3',
-    distanceKm: 1.0,
-    emoji: '🏪',
-  },
-];
 
 let MapView: React.ComponentType<any> | null = null;
 let MapMarker: React.ComponentType<any> | null = null;
@@ -160,8 +72,9 @@ function TeardropPin({
 export default function MasjidScreen() {
   const [filter, setFilter] = useState<Filter>('All');
   const [query, setQuery] = useState('');
+  const { data: mosques, loading, error } = useMosques();
 
-  const filtered = MASJIDS.filter((m) => {
+  const filtered = mosques.filter((m) => {
     const matchesFilter = filter === 'All' || m.type === filter;
     const matchesQuery =
       query.trim() === '' ||
@@ -208,7 +121,7 @@ export default function MasjidScreen() {
                 fontFamily: Fonts.medium,
               }}
             >
-              {MASJIDS.length} places nearby · Asar Jemaah 4:30 PM
+              {mosques.length || ''} places nearby · Asar Jemaah 4:30 PM
             </Text>
           }
         >
@@ -236,14 +149,12 @@ export default function MasjidScreen() {
                 }}
               >
                 {MapMarker &&
-                  MASJIDS.map((m) => (
+                  mosques.map((m) => (
                     <MapMarker
                       key={m.id}
                       coordinate={{
-                        latitude:
-                          1.3 + (parseInt(m.id) * 0.007 - 0.025),
-                        longitude:
-                          103.857 + (parseInt(m.id) * 0.005 - 0.02),
+                        latitude: m.coordinates.lat,
+                        longitude: m.coordinates.lng,
                       }}
                       title={m.name}
                     />
@@ -476,6 +387,36 @@ export default function MasjidScreen() {
 
           {/* List */}
           <View style={{ gap: 9 }}>
+            {loading && (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <ActivityIndicator color={Colors.brand} />
+                <Text
+                  style={{
+                    fontFamily: Fonts.medium,
+                    fontSize: 13,
+                    color: Colors.muted,
+                    marginTop: 10,
+                  }}
+                >
+                  Finding mosques near you…
+                </Text>
+              </View>
+            )}
+            {!loading && filtered.length === 0 && (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <Text style={{ fontSize: 32, marginBottom: 12 }}>🕌</Text>
+                <Text
+                  style={{
+                    fontFamily: Fonts.medium,
+                    fontSize: 14,
+                    color: Colors.muted,
+                    textAlign: 'center',
+                  }}
+                >
+                  {error ? 'Could not load places.' : 'No places found.'}
+                </Text>
+              </View>
+            )}
             {filtered.map((place, i) => {
               const isMasjid = place.type === 'Masjid';
               return (

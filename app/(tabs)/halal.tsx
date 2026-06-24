@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -7,7 +14,7 @@ import Animated from 'react-native-reanimated';
 import { enter } from '../../components/ui/enter';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { SectionDivider } from '../../components/ui/SectionDivider';
-import { HALAL_PLACES } from '../../services/muis';
+import { useHalalFood } from '../../hooks/useHalalFood';
 import { Colors, Fonts, Gradients, Radius, Shadow } from '../../constants/theme';
 
 const CUISINES = [
@@ -59,8 +66,9 @@ function CameraIcon({ size = 20, stroke = '#fff', strokeWidth = 1.7, r = 3.2 }) 
 export default function HalalScreen() {
   const [search, setSearch] = useState('');
   const [activeCuisine, setActiveCuisine] = useState<string | null>(null);
+  const { data: places, loading, error } = useHalalFood();
 
-  const filtered = HALAL_PLACES.filter((p) => {
+  const filtered = places.filter((p) => {
     const matchSearch =
       search === '' ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -284,6 +292,21 @@ export default function HalalScreen() {
 
           {/* Restaurant list */}
           <View style={{ gap: 9 }}>
+            {loading && (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <ActivityIndicator color={Colors.brand} />
+                <Text
+                  style={{
+                    fontFamily: Fonts.medium,
+                    fontSize: 13,
+                    color: Colors.muted,
+                    marginTop: 10,
+                  }}
+                >
+                  Finding halal food near you…
+                </Text>
+              </View>
+            )}
             {filtered.map((place, i) => (
               <Animated.View key={place.id} entering={enter(i * 50, 350)}>
                 <TouchableOpacity activeOpacity={0.85}>
@@ -376,24 +399,28 @@ export default function HalalScreen() {
                           gap: 14,
                         }}
                       >
-                        <Text
-                          style={{
-                            fontFamily: Fonts.extrabold,
-                            fontSize: 12,
-                            color: Colors.brand,
-                          }}
-                        >
-                          ✦ MUIS
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: Fonts.bold,
-                            fontSize: 12,
-                            color: Colors.goldText,
-                          }}
-                        >
-                          ★ {place.rating}
-                        </Text>
+                        {place.certified && (
+                          <Text
+                            style={{
+                              fontFamily: Fonts.extrabold,
+                              fontSize: 12,
+                              color: Colors.brand,
+                            }}
+                          >
+                            ✦ MUIS
+                          </Text>
+                        )}
+                        {place.rating > 0 && (
+                          <Text
+                            style={{
+                              fontFamily: Fonts.bold,
+                              fontSize: 12,
+                              color: Colors.goldText,
+                            }}
+                          >
+                            ★ {place.rating}
+                          </Text>
+                        )}
                         <Text
                           style={{
                             fontFamily: Fonts.regular,
@@ -426,7 +453,7 @@ export default function HalalScreen() {
               </Animated.View>
             ))}
 
-            {filtered.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <View style={{ padding: 40, alignItems: 'center' }}>
                 <Text style={{ fontSize: 32, marginBottom: 12 }}>🔍</Text>
                 <Text
@@ -437,7 +464,7 @@ export default function HalalScreen() {
                     textAlign: 'center',
                   }}
                 >
-                  No results for "{search}"
+                  {error ? 'Could not load halal food.' : `No results for "${search}"`}
                 </Text>
                 <Text
                   style={{
