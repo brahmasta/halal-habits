@@ -33,7 +33,10 @@ if ($Prebuild -or -not (Test-Path 'android\gradlew.bat')) {
 Write-Host '==> Building release APK (first run downloads dependencies, ~10 min)' -ForegroundColor Cyan
 Push-Location android
 try {
-  .\gradlew.bat assembleRelease --console=plain
+  # gradlew.bat splits arguments on '=', so pass the ABI list as a Gradle project-property env var.
+  if ($Fast) { $env:ORG_GRADLE_PROJECT_reactNativeArchitectures = 'arm64-v8a'; Write-Host '    (fast mode: arm64-v8a only)' -ForegroundColor DarkGray }
+  else { Remove-Item Env:\ORG_GRADLE_PROJECT_reactNativeArchitectures -ErrorAction SilentlyContinue }
+  & .\gradlew.bat assembleRelease --console=plain
   if ($LASTEXITCODE -ne 0) { throw 'Gradle build failed' }
 } finally { Pop-Location }
 

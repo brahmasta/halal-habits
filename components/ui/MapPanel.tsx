@@ -1,10 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { Text, View, ViewStyle } from 'react-native';
+import { Platform, Text, View, ViewStyle } from 'react-native';
+import Constants from 'expo-constants';
 import type { MapPanelProps } from './MapPanel.types';
 import { Fonts } from '@/constants/theme';
 import { Icon } from './Icon';
 
 const SG = { lat: 1.3021, lng: 103.8567 };
+
+// iOS uses Apple Maps (no key needed). Android's Google Maps SDK throws without a key,
+// so only mount it when the build was configured with GOOGLE_MAPS_ANDROID_KEY (see app.config.ts).
+const MAPS_AVAILABLE = Platform.OS !== 'android' || Constants.expoConfig?.extra?.androidMapsEnabled === true;
 
 // react-native-maps is native-only; guard the require so web/tests don't crash.
 let MapView: any = null;
@@ -38,8 +43,14 @@ export function MapPanel({ markers, center, userLocation, height = 470, showYouA
     if (ref.current && center) ref.current.animateToRegion({ latitude: center.lat, longitude: center.lng, latitudeDelta: 0.02, longitudeDelta: 0.02 }, 600);
   }, [center?.lat, center?.lng]);
 
-  if (!MapView) {
-    return <View style={[{ height, backgroundColor: '#E6E3DA' }, style]} />;
+  if (!MapView || !MAPS_AVAILABLE) {
+    // Android without a Google Maps key would crash inside the Maps SDK; show a quiet placeholder instead.
+    return (
+      <View style={[{ height, backgroundColor: '#E6E3DA', alignItems: 'center', justifyContent: 'center' }, style]}>
+        <Icon name="map-pin" size={20} color="#5C5F59" />
+        <Text style={{ fontFamily: Fonts.medium, fontSize: 12.5, color: '#5C5F59', marginTop: 6 }}>Map coming soon on this device</Text>
+      </View>
+    );
   }
   return (
     <View style={[{ height, overflow: 'hidden' }, style]} pointerEvents={interactive ? 'auto' : 'none'}>

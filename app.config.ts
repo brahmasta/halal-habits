@@ -34,7 +34,9 @@ const config: ExpoConfig = {
     },
     permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
     // react-native-maps on Android needs a Google Maps key (Maps SDK for Android).
-    config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY ?? '' } },
+    // Only set when a key exists; the app checks `extra.androidMapsEnabled` and shows a fallback
+    // instead of mounting Google Maps (which crashes on Android without a key).
+    config: process.env.GOOGLE_MAPS_ANDROID_KEY ? { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } } : undefined,
     intentFilters: [
       {
         action: 'VIEW',
@@ -59,6 +61,7 @@ const config: ExpoConfig = {
   experiments: { typedRoutes: true },
   extra: {
     eas: { projectId: 'eb978102-ff9f-4544-a1f6-80874e293f83' },
+    androidMapsEnabled: !!process.env.GOOGLE_MAPS_ANDROID_KEY,
   },
 };
 
