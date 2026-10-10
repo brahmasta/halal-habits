@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { Platform, ScrollView, TextInput, View, ViewStyle } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, PanResponder, Platform, ScrollView, TextInput, View, ViewStyle, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { B, Bezel, Btn, Chips, D, Hairline, Round, Stage, Tap } from '@/components/ui/kit';
@@ -14,6 +14,9 @@ import { useApp } from '@/store/app';
 import { walkMin } from '@/lib/geo';
 
 const FILTERS = ['Nearest', 'In malls', 'Masjid', 'Open now', 'Wudhu', "Women's area"];
+/** Sheet peek position from the design (y = 390). */
+const PEEK_Y = 390;
+const SHEET_HEADER_H = 92; // handle + chips, always visible when collapsed
 
 function shortName(n: string) {
   return n.replace(/^(Musollah|Masjid|Surau)\s+/i, '').replace(/\s+(Shopping )?(Mall|Centre|Center|Junction)$/i, (m) => (m.trim() === 'Junction' ? ' Jn' : ''));
@@ -24,6 +27,7 @@ export default function Find() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state, dispatch } = useApp();
+  const here = state.location ?? SG_CENTER;
   const { data: mosques, loading, error } = useMosques();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
@@ -63,11 +67,57 @@ export default function Find() {
   };
 
   const top = Math.max(insets.top, Platform.OS === 'web' ? 24 : 0) + 34;
+  const { height: H } = useWindowDimensions();
+
+  // Draggable sheet: expanded (under the search pill) · peek (design) · collapsed (chips only, map mostly visible)
+  const snaps = useMemo(() => {
+    const expanded = top + 50 + 16;
+    const collapsed = Math.max(PEEK_Y, H - SHEET_HEADER_H - 116 - 10);
+    return { expanded, peek: Math.min(PEEK_Y, collapsed), collapsed };
+  }, [top, H]);
+  const snapsRef = useRef(snaps);
+  snapsRef.current = snaps;
+  const sheetY = useRef(new Animated.Value(Math.min(PEEK_Y, snaps.collapsed))).current;
+  const posRef = useRef(Math.min(PEEK_Y, snaps.collapsed));
+  const startRef = useRef(0);
+  useEffect(() => {
+    const id = sheetY.addListener(({ value }) => {
+      posRef.current = value;
+    });
+    return () => sheetY.removeListener(id);
+  }, [sheetY]);
+  useEffect(() => {
+    Animated.timing(sheetY, { toValue: snaps.peek, duration: 500, easing: Easing.bezier(0.32, 0.72, 0, 1), useNativeDriver: false }).start();
+  }, [snaps.peek, sheetY]);
+
+  const pan = useRef(
+    PanResponder.create({
+      // Take over on a mostly-vertical drag; taps and horizontal chip scrolling pass through.
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderGrant: () => {
+        sheetY.stopAnimation();
+        startRef.current = posRef.current;
+      },
+      onPanResponderMove: (_e, g) => {
+        const { expanded, collapsed } = snapsRef.current;
+        sheetY.setValue(Math.min(collapsed, Math.max(expanded, startRef.current + g.dy)));
+      },
+      onPanResponderRelease: (_e, g) => {
+        const { expanded, peek, collapsed } = snapsRef.current;
+        const velocity = g.vy * 1000; // px/s
+        const projected = posRef.current + velocity * 0.15;
+        let target = expanded;
+        for (const p of [expanded, peek, collapsed]) if (Math.abs(p - projected) < Math.abs(target - projected)) target = p;
+        Animated.spring(sheetY, { toValue: target, velocity: g.vy, damping: 26, stiffness: 220, mass: 0.9, useNativeDriver: false }).start();
+      },
+      onPanResponderTerminationRequest: () => false,
+    })
+  ).current;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 470 }}>
-        <MapPanel markers={markers} center={SG_CENTER} height={470} onMarkerPress={pick} dark={t.dark} ink={t.ink} bg={t.bg} surface={t.surface} ring={t.ring} />
+      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+        <MapPanel markers={markers} center={here} userLocation={here} height={H} onMarkerPress={pick} dark={t.dark} ink={t.ink} bg={t.bg} surface={t.surface} ring={t.ring} />
       </View>
 
       <View style={{ position: 'absolute', top, left: 18, right: 18, flexDirection: 'row', gap: 10 }}>
@@ -78,11 +128,13 @@ export default function Find() {
         <Round name="layers" size={50} />
       </View>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 390, borderTopLeftRadius: 36, borderTopRightRadius: 36, backgroundColor: t.bg, boxShadow: '0 -18px 40px -20px rgba(18,20,18,0.25)', paddingTop: 10, overflow: 'hidden' } as ViewStyle}>
-        <Stage>
-          <View style={{ width: 40, height: 5, borderRadius: 9, backgroundColor: t.sunk, alignSelf: 'center', marginBottom: 16 }} />
-          <Chips items={FILTERS} selected={filters} onToggle={toggle} />
-        </Stage>
+      <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 36, borderTopRightRadius: 36, backgroundColor: t.bg, boxShadow: '0 -18px 40px -20px rgba(18,20,18,0.25)', overflow: 'hidden' } as ViewStyle, { top: sheetY }]}>
+        <View {...pan.panHandlers} style={{ paddingTop: 10, paddingBottom: 4 }} testID="find-sheet-handle">
+          <Stage>
+            <View style={{ width: 40, height: 5, borderRadius: 9, backgroundColor: t.sunk, alignSelf: 'center', marginBottom: 16 }} />
+            <Chips items={FILTERS} selected={filters} onToggle={toggle} />
+          </Stage>
+        </View>
         <ScrollView ref={listRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 14, paddingBottom: 116 }}>
           {error ? (
             <View style={{ paddingTop: 20, gap: 14 }}>
@@ -123,7 +175,7 @@ export default function Find() {
             })
           )}
         </ScrollView>
-      </View>
+      </Animated.View>
     </View>
   );
 }
