@@ -39,7 +39,10 @@ const config: ExpoConfig = {
       {
         action: 'VIEW',
         autoVerify: true,
-        data: [{ scheme: 'https', host: 'halal-habits.vercel.app', pathPrefix: '/auth' }],
+        data: [
+          { scheme: 'https', host: 'www.halalhabits.app', pathPrefix: '/auth' },
+          { scheme: 'https', host: 'halalhabits.app', pathPrefix: '/auth' },
+        ],
         category: ['BROWSABLE', 'DEFAULT'],
       },
     ],

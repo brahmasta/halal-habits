@@ -1,9 +1,6 @@
-// Live mosque + halal-food data, sourced from the same backend/database as the
-// guided-salah web app (https://halalhabits.app). The app calls those public
-// read endpoints so both products show the same listings.
-//
-// Note: works directly on native. On web it needs CORS enabled on the API
-// (guided-salah PR #6) since the request is cross-origin.
+// Live mosque + halal-food data from the app's own Supabase backend: the `places`
+// edge function (supabase/functions/places) returns curated rows plus Google Places
+// results. Curated seeds in lib/ are the offline fallback.
 
 import { SEED_PLACES } from '../lib/places-seed';
 import { SEED_FOOD } from '../lib/food-seed';
