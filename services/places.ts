@@ -8,7 +8,8 @@
 import { SEED_PLACES } from '../lib/places-seed';
 import { SEED_FOOD } from '../lib/food-seed';
 
-const API_BASE = 'https://halalhabits.app';
+// Use the www host directly: the apex answers with a 308 that has no CORS header, which browsers reject.
+const API_BASE = 'https://www.halalhabits.app';
 
 // Default reference point (Singapore CBD / Kampong Glam) used for distances and
 // the "nearby food" query, until device geolocation is wired up.
