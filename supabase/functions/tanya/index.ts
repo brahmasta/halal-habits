@@ -10,7 +10,7 @@ const CORS = {
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-const MODEL = 'claude-opus-5-5';
+const MODEL = 'claude-sonnet-5-5';
 // Thinking is always on for this model and its tokens count against max_tokens, so leave headroom;
 // low effort keeps chat answers quick (the brevity limit lives in the system prompt).
 const MAX_TOKENS = 4000;
