@@ -1,5 +1,6 @@
-import { View } from 'react-native';
+import { Text, View, ViewStyle } from 'react-native';
 import type { MapPanelProps } from './MapPanel.types';
+import { Fonts } from '@/constants/theme';
 
 const SG = { lat: 1.3021, lng: 103.8567 };
 
@@ -14,71 +15,45 @@ try {
   // not available
 }
 
-export function MapPanel({
-  markers,
-  center,
-  height = 160,
-  rounded = 'all',
-  showYouAreHere = true,
-  style,
-}: MapPanelProps) {
+// Muted warm style matching the Chalk base (Google Maps JSON style; Android + iOS with Google provider).
+const MUTED_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#E6E3DA' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#5C5F59' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#FAFAF7' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FCFBF8' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#D5DDCF' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#D5DDCF' }] },
+];
+
+export function MapPanel({ markers, center, height = 470, showYouAreHere = true, onMarkerPress, ink, bg, surface, ring, style }: MapPanelProps) {
   const c = center ?? SG;
-  const radius =
-    rounded === 'top'
-      ? { borderTopLeftRadius: 20, borderTopRightRadius: 20 }
-      : { borderRadius: 20 };
-
   if (!MapView) {
-    return <View style={[{ height, backgroundColor: '#E9EFF7' }, radius, style]} />;
+    return <View style={[{ height, backgroundColor: '#E6E3DA' }, style]} />;
   }
-
   return (
-    <View style={[{ height, overflow: 'hidden' }, radius, style]}>
+    <View style={[{ height, overflow: 'hidden' }, style]}>
       <MapView
         style={{ flex: 1 }}
-        initialRegion={{
-          latitude: c.lat,
-          longitude: c.lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
+        customMapStyle={MUTED_STYLE}
+        initialRegion={{ latitude: c.lat, longitude: c.lng, latitudeDelta: 0.03, longitudeDelta: 0.03 }}
+        showsPointsOfInterest={false}
       >
         {markers.map((m) => (
-          <Marker
-            key={m.id}
-            coordinate={{ latitude: m.lat, longitude: m.lng }}
-            title={m.label}
-          >
-            <View
-              style={{
-                width: 18,
-                height: 18,
-                backgroundColor: m.color,
-                borderWidth: 2,
-                borderColor: '#fff',
-                borderTopLeftRadius: 9,
-                borderTopRightRadius: 9,
-                borderBottomLeftRadius: 9,
-                borderBottomRightRadius: 0,
-                transform: [{ rotate: '-45deg' }],
-              }}
-            />
+          <Marker key={m.id} coordinate={{ latitude: m.lat, longitude: m.lng }} anchor={{ x: 0.5, y: 1 }} onPress={() => onMarkerPress?.(m.id)} tracksViewChanges={false}>
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ paddingVertical: m.selected ? 7 : 5, paddingHorizontal: m.selected ? 12 : 10, borderRadius: 999, backgroundColor: m.selected ? ink : surface, boxShadow: `0 0 0 1px ${ring}, 0 10px 20px -10px rgba(18,20,18,0.4)` } as ViewStyle}>
+                <Text style={{ fontFamily: Fonts.semibold, fontSize: m.selected ? 12.5 : 11.5, color: m.selected ? bg : ink }}>{m.label}</Text>
+              </View>
+              <View style={{ width: 2, height: 8, backgroundColor: m.selected ? ink : '#A3A59E' }} />
+            </View>
           </Marker>
         ))}
-        {showYouAreHere && (
-          <Marker coordinate={{ latitude: c.lat, longitude: c.lng }}>
-            <View
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: 7,
-                backgroundColor: '#fff',
-                borderWidth: 3,
-                borderColor: '#0B7A4F',
-              }}
-            />
+        {showYouAreHere ? (
+          <Marker coordinate={{ latitude: c.lat, longitude: c.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+            <View style={{ width: 18, height: 18, borderRadius: 99, backgroundColor: '#3A6FD8', boxShadow: '0 0 0 4px #fff, 0 0 0 16px rgba(58,111,216,0.16)' } as ViewStyle} />
           </Marker>
-        )}
+        ) : null}
       </MapView>
     </View>
   );

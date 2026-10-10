@@ -4,8 +4,9 @@ export interface MapMarkerData {
   id: string;
   lat: number;
   lng: number;
-  color: string; // teardrop fill
-  label?: string;
+  /** Pill label, e.g. "Bugis Jn · 4 min" */
+  label: string;
+  selected?: boolean;
 }
 
 export interface MapPanelProps {
@@ -13,7 +14,13 @@ export interface MapPanelProps {
   center?: { lat: number; lng: number };
   zoom?: number;
   height?: number;
-  rounded?: 'top' | 'all';
   showYouAreHere?: boolean;
+  onMarkerPress?: (id: string) => void;
+  dark?: boolean;
+  /** Colours for the pill pins */
+  ink: string;
+  bg: string;
+  surface: string;
+  ring: string;
   style?: ViewStyle;
 }

@@ -5,6 +5,8 @@
 // Note: works directly on native. On web it needs CORS enabled on the API
 // (guided-salah PR #6) since the request is cross-origin.
 
+import { SEED_PLACES } from '../lib/places-seed';
+
 const API_BASE = 'https://halalhabits.app';
 
 // Default reference point (Singapore CBD / Kampong Glam) used for distances and
@@ -25,6 +27,17 @@ function haversineKm(a: LatLng, b: LatLng): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** fetch with a hard timeout so a cold backend never leaves screens hanging. */
+async function fetchT(url: string, ms = 9000): Promise<Response> {
+  const ctl = new AbortController();
+  const id = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, { signal: ctl.signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
 
 function pickFoodEmoji(text: string): string {
   const t = text.toLowerCase();
@@ -68,6 +81,26 @@ export interface Mosque {
   jemaahTime?: string;
   emoji: string;
   coordinates: LatLng;
+  openUntil?: string;
+  women?: boolean;
+  steps?: Array<[string, string]>;
+}
+
+export function seedMosques(loc: LatLng = SG_CENTER): Mosque[] {
+  return SEED_PLACES.map<Mosque>((r) => ({
+    id: r.id,
+    name: r.name,
+    type: r.type,
+    area: r.area,
+    address: r.address,
+    distanceKm: round1(haversineKm(loc, { lat: r.lat, lng: r.lng })),
+    jemaahTime: r.jemaahTime,
+    emoji: r.type === 'Musholla' ? '🏪' : '🕌',
+    coordinates: { lat: r.lat, lng: r.lng },
+    openUntil: r.openUntil,
+    women: r.women,
+    steps: r.steps,
+  })).sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
 interface MosqueRow {
@@ -81,10 +114,17 @@ interface MosqueRow {
 }
 
 export async function fetchMosques(loc: LatLng = SG_CENTER): Promise<Mosque[]> {
-  const res = await fetch(`${API_BASE}/api/mosques?lat=${loc.lat}&lng=${loc.lng}`);
-  if (!res.ok) throw new Error(`mosques HTTP ${res.status}`);
-  const json = (await res.json()) as { dbPlaces?: MosqueRow[] };
-  const rows = json.dbPlaces ?? [];
+  let rows: MosqueRow[] = [];
+  try {
+    const res = await fetchT(`${API_BASE}/api/mosques?lat=${loc.lat}&lng=${loc.lng}`);
+    if (!res.ok) throw new Error(`mosques HTTP ${res.status}`);
+    const json = (await res.json()) as { dbPlaces?: MosqueRow[] };
+    rows = json.dbPlaces ?? [];
+  } catch {
+    rows = [];
+  }
+  // The live directory is still being populated; fall back to the curated set.
+  if (!rows.length) return seedMosques(loc);
   return rows
     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
     .map<Mosque>((r) => ({
@@ -135,7 +175,7 @@ interface GoogleFood {
 }
 
 export async function fetchHalalFood(loc: LatLng = SG_CENTER): Promise<HalalItem[]> {
-  const res = await fetch(`${API_BASE}/api/food?lat=${loc.lat}&lng=${loc.lng}`);
+  const res = await fetchT(`${API_BASE}/api/food?lat=${loc.lat}&lng=${loc.lng}`, 15000);
   if (!res.ok) throw new Error(`food HTTP ${res.status}`);
   const json = (await res.json()) as { dbPlaces?: FoodRow[]; places?: GoogleFood[] };
 

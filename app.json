@@ -5,14 +5,14 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "halalhabits",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "ios": { "supportsTablet": false },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "backgroundColor": "#F9F6F1"
+        "backgroundColor": "#FAFAF7"
       }
     },
     "web": { "bundler": "metro", "output": "single", "favicon": "./assets/favicon.png" },

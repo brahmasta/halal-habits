@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fetchMosques, Mosque } from '../services/places';
+import { fetchMosques, seedMosques, Mosque } from '../services/places';
 
 export function useMosques() {
-  const [data, setData] = useState<Mosque[]>([]);
+  // Curated places render instantly; live rows replace them when the API answers.
+  const [data, setData] = useState<Mosque[]>(() => seedMosques());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -10,7 +11,7 @@ export function useMosques() {
     let alive = true;
     fetchMosques()
       .then((m) => alive && setData(m))
-      .catch((e) => alive && setError(String(e)))
+      .catch((e) => alive && setError(String(e))) // seed stays in place
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
