@@ -81,7 +81,7 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
         setRaw({ subuh: t.Fajr, zohor: t.Dhuhr, asar: t.Asr, maghrib: t.Maghrib, isyak: t.Isha });
         setSyurukRaw(t.Sunrise);
         const hd = res.data.date.hijri;
-        setHijri(`${hd.day} ${hd.month.en}`);
+        setHijri(`${hd.day} ${hd.month.en} ${hd.year} AH`);
         setOffline(false);
       })
       .catch((e) => {

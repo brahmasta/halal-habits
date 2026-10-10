@@ -6,6 +6,7 @@
 // (guided-salah PR #6) since the request is cross-origin.
 
 import { SEED_PLACES } from '../lib/places-seed';
+import { SEED_FOOD } from '../lib/food-seed';
 
 const API_BASE = 'https://halalhabits.app';
 
@@ -174,10 +175,31 @@ interface GoogleFood {
   types?: string[];
 }
 
+export function seedFood(loc: LatLng = SG_CENTER): HalalItem[] {
+  return SEED_FOOD.map<HalalItem>((r) => ({
+    id: r.id,
+    name: r.name,
+    cuisine: r.cuisine,
+    district: r.address,
+    distanceKm: round1(haversineKm(loc, { lat: r.lat, lng: r.lng })),
+    rating: r.rating,
+    tag: null,
+    emoji: pickFoodEmoji(`${r.cuisine} ${r.name}`),
+    certified: r.certified,
+    coordinates: { lat: r.lat, lng: r.lng },
+  })).sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
 export async function fetchHalalFood(loc: LatLng = SG_CENTER): Promise<HalalItem[]> {
-  const res = await fetchT(`${API_BASE}/api/food?lat=${loc.lat}&lng=${loc.lng}`, 15000);
-  if (!res.ok) throw new Error(`food HTTP ${res.status}`);
-  const json = (await res.json()) as { dbPlaces?: FoodRow[]; places?: GoogleFood[] };
+  let json: { dbPlaces?: FoodRow[]; places?: GoogleFood[] };
+  try {
+    const res = await fetchT(`${API_BASE}/api/food?lat=${loc.lat}&lng=${loc.lng}`, 15000);
+    if (!res.ok) throw new Error(`food HTTP ${res.status}`);
+    json = (await res.json()) as typeof json;
+  } catch {
+    // unreachable (CORS on web, offline): keep the curated set
+    return seedFood(loc);
+  }
 
   const db = (json.dbPlaces ?? [])
     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
@@ -233,5 +255,6 @@ export async function fetchHalalFood(loc: LatLng = SG_CENTER): Promise<HalalItem
     seen.add(k);
     out.push(item);
   }
+  if (!out.length) return seedFood(loc);
   return out.sort((a, b) => a.distanceKm - b.distanceKm);
 }

@@ -10,7 +10,7 @@ import { Icon, IconName } from './Icon';
 const ITEMS: Array<{ name: string; label: string; icon: IconName }> = [
   { name: 'home', label: 'Home', icon: 'home' },
   { name: 'pray', label: 'Pray', icon: 'clock' },
-  { name: 'find', label: 'Find', icon: 'map-pin' },
+  { name: 'find', label: 'Find', icon: 'mosque-glyph' },
   { name: 'eat', label: 'Eat', icon: 'utensils' },
   { name: 'tanya', label: 'Tanya', icon: 'msg' },
 ];
@@ -42,7 +42,7 @@ export function TabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const active = ITEMS.find((i) => pathname === `/${i.name}` || pathname.startsWith(`/${i.name}/`))?.name ?? 'home';
+  const active = ITEMS.find((i) => pathname === `/${i.name}` || pathname.startsWith(`/${i.name}/`) || pathname.startsWith(`/${i.name}-`))?.name ?? 'home';
   return (
     <View
       style={{ pointerEvents: 'box-none', position: 'absolute', left: 18, right: 18, bottom: 26 + Math.max(insets.bottom - 12, 0), height: 64, borderRadius: 999, padding: 6, flexDirection: 'row', gap: 2, backgroundColor: 'rgba(18,20,18,0.86)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px -18px rgba(18,20,18,0.5)' } as ViewStyle}

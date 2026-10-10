@@ -13,6 +13,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="pray" />
       <Tabs.Screen name="find" />
       <Tabs.Screen name="eat" />
+      <Tabs.Screen name="eat-map" />
       <Tabs.Screen name="tanya" />
     </Tabs>
   );

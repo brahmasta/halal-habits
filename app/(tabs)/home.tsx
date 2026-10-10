@@ -44,8 +44,15 @@ export default function Home() {
           <Text style={{ fontFamily: Fonts.display, fontSize: 18, color: t.brandInk }}>{state.name.charAt(0)}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <B size={12.5} color={t.muted}>{fmtDate()}{hijri ? ` · ${hijri}` : ''}{offline ? ' · Offline' : ''}</B>
-          <D size={22} style={{ marginTop: 1 }}>Salaam, {state.name}</D>
+          <B size={12.5} color={t.muted}>{t.islamic && hijri ? `${hijri} · ${fmtDate()}` : `${fmtDate()}${hijri ? ` · ${hijri}` : ''}`}{offline ? ' · Offline' : ''}</B>
+          {t.islamic ? (
+            <Text style={{ marginTop: 1 }}>
+              <D size={19}>Assalamu'alaikum, </D>
+              <I size={22}>{state.name}</I>
+            </Text>
+          ) : (
+            <D size={22} style={{ marginTop: 1 }}>Salaam, {state.name}</D>
+          )}
         </View>
         <Round name="bell" onPress={() => router.push('/(tabs)/pray')} />
       </View>

@@ -4,7 +4,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 export type IconName =
   | 'home' | 'clock' | 'map-pin' | 'utensils' | 'msg' | 'bell' | 'settings' | 'search' | 'layers'
   | 'arrow' | 'back' | 'check' | 'star' | 'heart' | 'bookmark' | 'send' | 'walk' | 'sunrise'
-  | 'sparkle' | 'book' | 'mosque-glyph' | 'plus' | 'compass' | 'sun' | 'moon';
+  | 'sparkle' | 'book' | 'mosque-glyph' | 'plus' | 'compass' | 'sun' | 'moon' | 'list';
 
 // Thin-line set: 1.35px stroke on a 24px grid, round caps and joins.
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -33,6 +33,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   compass: <><Circle cx="12" cy="12" r="9" /><Path d="M15.5 8.5l-2 5-5 2 2-5z" /></>,
   sun: <><Circle cx="12" cy="12" r="4" /><Path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
   moon: <Path d="M21 13A9 9 0 1111 3a7 7 0 0010 10z" />,
+  list: <Path d="M3 6h18M3 12h18M3 18h18" />,
 };
 
 export function Icon({ name, size = 18, color = '#121412', stroke = 1.35, fill }: { name: IconName; size?: number; color?: string; stroke?: number; fill?: string }) {

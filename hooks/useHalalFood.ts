@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fetchHalalFood, HalalItem } from '../services/places';
+import { fetchHalalFood, seedFood, HalalItem } from '../services/places';
 
 export function useHalalFood() {
-  const [data, setData] = useState<HalalItem[]>([]);
+  // Curated spots render instantly; live rows replace them when the API answers.
+  const [data, setData] = useState<HalalItem[]>(() => seedFood());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

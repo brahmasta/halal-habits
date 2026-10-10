@@ -43,6 +43,8 @@ export interface Tokens {
   shadow: string;
   hi: string;
   glass: string;
+  /** star ornaments on light surfaces */
+  gold: string;
 }
 
 export const CHALK: Tokens = {
@@ -62,6 +64,7 @@ export const CHALK: Tokens = {
   shadow: 'rgba(28,40,30,0.16)',
   hi: 'rgba(255,255,255,0.8)',
   glass: 'rgba(252,251,248,0.78)',
+  gold: '#A8843A',
 };
 
 export const INK: Tokens = {
@@ -81,11 +84,13 @@ export const INK: Tokens = {
   shadow: 'rgba(0,0,0,0.6)',
   hi: 'rgba(255,255,255,0.06)',
   glass: 'rgba(27,30,27,0.78)',
+  gold: '#D9B867',
 };
 
 /** Always-dark welcome screen surface. */
 export const WELCOME_BG = '#121412';
 export const WELCOME_INK = '#F3F1EC';
+export const WELCOME_GOLD = '#D9B867';
 
 // Fonts — loaded in app/_layout.tsx.
 export const Fonts = {
@@ -99,6 +104,8 @@ export const Fonts = {
   mono: 'GeistMono_400Regular',
   monoMedium: 'GeistMono_500Medium',
   arabic: 'Amiri_400Regular',
+  arabicBold: 'Amiri_700Bold',
+  kufi: 'ReemKufi_500Medium',
 } as const;
 
 export const EASE = { x1: 0.32, y1: 0.72, x2: 0, y2: 1 } as const;

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View, ViewStyle } from 'react-native';
-import { B, Bezel, D, I, Ring, Round, Screen, Tag } from '@/components/ui/kit';
+import { Ar, B, Bezel, D, I, Ring, Round, Screen, Tag } from '@/components/ui/kit';
+import { Khatam, Star } from '@/components/ui/ornament';
 import { Icon } from '@/components/ui/Icon';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { CheckInSheet } from '@/components/prayer/CheckInSheet';
@@ -16,7 +17,8 @@ function Band({ p, state, onPress, reminder, onBell }: { p: PrayerTime; state: '
   const s = SKY[p.k];
   if (state === 'next') {
     return (
-      <Bezel bg={s.bg} r={28} style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18 }}>
+      <Bezel bg={s.bg} r={28} style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18, overflow: 'hidden' }}>
+        {t.islamic ? <Khatam color={s.ink} opacity={0.1} fade="left" maskColor={s.bg} /> : null}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Tag color={s.ink} bg="rgba(255,255,255,0.14)" ring="rgba(255,255,255,0.12)" dot={s.ink}>Next · {countdown}</Tag>
           <B size={12.5} color={s.dim}>{s.vibe}</B>
@@ -28,6 +30,7 @@ function Band({ p, state, onPress, reminder, onBell }: { p: PrayerTime; state: '
             <B size={13} color={s.dim}> {p.meridiem}</B>
           </Text>
         </View>
+        {t.islamic ? <Ar size={20} color={s.sub} style={{ marginTop: 6, alignSelf: 'flex-start' }}>{s.ar}</Ar> : null}
       </Bezel>
     );
   }
@@ -35,8 +38,11 @@ function Band({ p, state, onPress, reminder, onBell }: { p: PrayerTime; state: '
   const dimText = done;
   return (
     <Ring onPress={onPress} style={{ height: 64, flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 20, paddingRight: 10 }}>
-      <View style={{ width: 12, height: 12, borderRadius: 99, backgroundColor: s.bg, boxShadow: `0 0 0 4px ${s.bg}33` } as ViewStyle} />
-      <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 21, letterSpacing: -0.7, flex: 1, color: dimText ? t.muted : t.ink }}>{s.name}</Text>
+      {t.islamic ? <Star size={16} color={s.bg} /> : <View style={{ width: 12, height: 12, borderRadius: 99, backgroundColor: s.bg, boxShadow: `0 0 0 4px ${s.bg}33` } as ViewStyle} />}
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+        <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 21, letterSpacing: -0.7, color: dimText ? t.muted : t.ink }}>{s.name}</Text>
+        {t.islamic ? <Ar size={15} color={t.muted}>{s.ar}</Ar> : null}
+      </View>
       <Text>
         <B size={15} weight={500} color={dimText ? t.muted : t.ink}>{p.time}</B>
         <B size={11.5} color={t.muted}> {p.meridiem}</B>

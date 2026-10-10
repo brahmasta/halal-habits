@@ -26,6 +26,7 @@ export interface AppState {
   reminders: Record<PrayerKey, boolean>;
   findFilters: number[];
   theme: 'system' | 'light' | 'dark';
+  style: 'islamic' | 'modern';
   circle: Friend[];
   saved: string[]; // food / place ids
 }
@@ -45,6 +46,7 @@ const initial: AppState = {
   reminders: { subuh: true, zohor: true, asar: true, maghrib: true, isyak: true },
   findFilters: [0, 3],
   theme: 'system',
+  style: 'islamic',
   circle: DEFAULT_CIRCLE,
   saved: [],
 };
@@ -57,6 +59,7 @@ type Action =
   | { type: 'reminder'; prayer: PrayerKey; on: boolean }
   | { type: 'findFilters'; filters: number[] }
   | { type: 'theme'; theme: AppState['theme'] }
+  | { type: 'style'; style: AppState['style'] }
   | { type: 'toggleSaved'; id: string }
   | { type: 'reset' };
 
@@ -79,6 +82,8 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, findFilters: a.filters };
     case 'theme':
       return { ...s, theme: a.theme };
+    case 'style':
+      return { ...s, style: a.style };
     case 'toggleSaved':
       return {
         ...s,

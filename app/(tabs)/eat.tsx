@@ -60,7 +60,7 @@ export default function Eat() {
         })}
       </ScrollView>
 
-      <SectionHead pre={mood ? MOODS.find((m) => m.key === mood)!.label : 'Trending'} accent={mood ? 'spots' : 'near you'} link="Map" onLink={() => router.push('/(tabs)/find')} style={{ paddingTop: 30, paddingBottom: 14 }} />
+      <SectionHead pre={mood ? MOODS.find((m) => m.key === mood)!.label : 'Trending'} accent={mood ? 'spots' : 'near you'} link="Map" onLink={() => router.push('/(tabs)/eat-map')} style={{ paddingTop: 30, paddingBottom: 14 }} />
 
       <View style={{ gap: 22, paddingHorizontal: 22, paddingBottom: 10 }}>
         {loading
@@ -71,9 +71,9 @@ export default function Eat() {
               return (
                 <Bezel key={f.id} r={28} onPress={() => router.push(`/food/${encodeURIComponent(f.id)}`)} style={{ padding: 6 }}>
                   <View>
-                    <Photo label={`${f.emoji} ${f.cuisine.split(' ·')[0]}`} h={i === 0 ? 200 : 150} r={23} tone={(t.dark ? TONES_DARK : TONES)[i % 4]} />
-                    {m ? <View style={{ position: 'absolute', top: 12, left: 12 }}><Tag color={t.ink} bg={t.dark ? 'rgba(27,30,27,0.92)' : 'rgba(252,251,248,0.92)'} ring="transparent">{m.label}</Tag></View> : null}
-                    <View style={{ position: 'absolute', top: 10, right: 10 }}>
+                    <Photo label={`${f.emoji} ${f.cuisine.split(' ·')[0]}`} h={i === 0 ? 200 : 150} r={23} tone={(t.dark ? TONES_DARK : TONES)[i % 4]} labelTop={t.islamic} />
+                    {m ? <View style={{ position: 'absolute', left: 12, ...(t.islamic ? { bottom: 12 } : { top: 12 }) }}><Tag color={t.ink} bg={t.dark ? 'rgba(27,30,27,0.92)' : 'rgba(252,251,248,0.92)'} ring="transparent">{m.label}</Tag></View> : null}
+                    <View style={{ position: 'absolute', right: 10, ...(t.islamic ? { bottom: 10 } : { top: 10 }) }}>
                       <Round name="heart" size={38} onPress={() => dispatch({ type: 'toggleSaved', id: `food:${f.id}` })} color={saved ? '#B6503F' : undefined} />
                     </View>
                   </View>

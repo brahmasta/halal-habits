@@ -11,7 +11,8 @@ import {
 import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold } from '@expo-google-fonts/geist';
 import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/geist-mono';
-import { Amiri_400Regular } from '@expo-google-fonts/amiri';
+import { Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
+import { ReemKufi_500Medium } from '@expo-google-fonts/reem-kufi';
 import { CHALK } from '@/constants/theme';
 import { AppProvider, useApp } from '@/store/app';
 import { NowProvider } from '@/store/now';
@@ -47,6 +48,8 @@ export default function RootLayout() {
     GeistMono_400Regular,
     GeistMono_500Medium,
     Amiri_400Regular,
+    Amiri_700Bold,
+    ReemKufi_500Medium,
   });
 
   if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: CHALK.bg }} />;

@@ -7,6 +7,7 @@ import { useTheme } from './ThemeContext';
 import { Icon, IconName } from './Icon';
 import { enter } from './enter';
 import { useNow } from '@/store/now';
+import { Khatam, Star, useArch } from './ornament';
 
 // ── Text ────────────────────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ export function Tag({ children, color, bg, ring, dot, style }: { children: React
   const rg = ring ?? t.ring;
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, backgroundColor: bg ?? t.shell, boxShadow: rg === 'transparent' ? undefined : `0 0 0 1px ${rg}`, alignSelf: 'flex-start' } as ViewStyle, style]}>
-      {dot ? <View style={{ width: 6, height: 6, borderRadius: 9, backgroundColor: dot }} /> : null}
+      {t.islamic ? <Star size={9} color={dot ?? (color === undefined || color === t.muted ? t.gold : color)} /> : dot ? <View style={{ width: 6, height: 6, borderRadius: 9, backgroundColor: dot }} /> : null}
       <Text style={{ fontFamily: Fonts.medium, fontSize: 9.5, letterSpacing: 0.2 * 9.5, textTransform: 'uppercase', color: color ?? t.muted }} numberOfLines={1}>
         {children}
       </Text>
@@ -147,19 +148,21 @@ export function Chips({ items, selected, onToggle, pad = 20 }: { items: string[]
 
 // ── Placeholder photo (striped) ─────────────────────────────────────────────
 
-export function Photo({ label, h = 200, r = 22, tone, style, children }: { label?: string; h?: number; r?: number; tone?: string; style?: StyleProp<ViewStyle>; children?: React.ReactNode }) {
+export function Photo({ label, h = 200, r = 22, tone, style, children, labelTop, w }: { label?: string; h?: number; r?: number; tone?: string; style?: StyleProp<ViewStyle>; children?: React.ReactNode; labelTop?: boolean; w?: number }) {
   const t = useTheme();
   const base = tone ?? t.sunk;
   const stripes = Array.from({ length: 40 });
+  const arched = t.islamic && r > 0;
+  const arch = useArch(h, r, w);
   return (
-    <View style={[{ height: h, borderRadius: r, overflow: 'hidden', backgroundColor: base }, style]}>
+    <View ref={arched ? arch.ref : undefined} style={[{ height: h, overflow: 'hidden', backgroundColor: base }, arched ? arch.style : { borderRadius: r }, style]}>
       <View style={{ position: 'absolute', left: -200, top: -200, right: -200, bottom: -200, transform: [{ rotate: '-45deg' }] }}>
         {stripes.map((_, i) => (
           <View key={i} style={{ position: 'absolute', top: i * 15 * 2, left: 0, right: 0, height: 1, backgroundColor: t.dark ? 'rgba(255,255,255,0.05)' : 'rgba(18,20,18,0.05)' }} />
         ))}
       </View>
       {label ? (
-        <View style={{ position: 'absolute', left: 12, bottom: 12, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999, backgroundColor: t.dark ? 'rgba(27,30,27,0.9)' : 'rgba(252,251,248,0.9)' }}>
+        <View style={[{ position: 'absolute', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999, backgroundColor: t.dark ? 'rgba(27,30,27,0.9)' : 'rgba(252,251,248,0.9)' }, labelTop ? { top: Math.round(h * 0.45), alignSelf: 'center', left: 0, right: 0, marginHorizontal: 'auto', maxWidth: '80%' } : { left: 12, bottom: 12 }]}>
           <Mono>{label}</Mono>
         </View>
       ) : null}
@@ -208,8 +211,10 @@ export function Screen({ children, bg, tab, bottom, scroll = true, style, conten
   const insets = useSafeAreaInsets();
   const top = Math.max(insets.top, Platform.OS === 'web' ? 24 : 0) + 32;
   const padBottom = tab && !bottom ? 116 : 24;
+  const surface = bg ?? t.bg;
   return (
-    <View style={[{ flex: 1, backgroundColor: bg ?? t.bg }, style]}>
+    <View style={[{ flex: 1, backgroundColor: surface }, style]}>
+      {t.islamic ? <Khatam color={t.ink} opacity={t.dark ? 0.06 : 0.045} fade="down" maskColor={surface} style={{ bottom: undefined, height: 420 }} /> : null}
       {scroll ? (
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[{ paddingTop: top, paddingBottom: padBottom }, contentStyle]}>
           <Stage>{children}</Stage>
