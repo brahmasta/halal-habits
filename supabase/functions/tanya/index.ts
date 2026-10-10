@@ -10,8 +10,11 @@ const CORS = {
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-const MODEL = 'claude-sonnet-5-5';
-const MAX_TOKENS = 700;
+const MODEL = 'claude-opus-5-5';
+// Thinking is always on for this model and its tokens count against max_tokens, so leave headroom;
+// low effort keeps chat answers quick (the brevity limit lives in the system prompt).
+const MAX_TOKENS = 4000;
+const EFFORT = 'low';
 const MAX_TURNS = 20;
 const MAX_CHARS = 2000; // per message
 const RATE = { windowMs: 60_000, max: 12 }; // per client IP, per isolate
@@ -22,7 +25,8 @@ const SYSTEM = `You are Tanya, a warm and knowledgeable study companion for youn
 - For personal rulings, fatwas, or matters where scholars differ, give the main views neutrally and recommend speaking to a qualified asatizah (for example via MUIS or the local masjid).
 - You can help with prayer times, du'a, halal food questions (E-numbers, ingredients), travel prayers, and building good habits.
 - Stay on Islamic practice and daily Muslim life; politely decline unrelated requests.
-- Never ask for or repeat personal information.`;
+- Never ask for or repeat personal information.
+- Formatting: the app shows plain text. Do not use Markdown (no #, no **, no tables). Write short paragraphs; for lists start lines with "• ".`;
 
 const hits = new Map<string, number[]>();
 function limited(ip: string): boolean {
@@ -59,10 +63,18 @@ Deno.serve(async (req) => {
 
   const upstream = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      // Server-side fallback: a safety-classifier decline is retried on Anthropic's recommended model.
+      'anthropic-beta': 'server-side-fallback-2026-07-01',
+    },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
+      output_config: { effort: EFFORT },
+      fallbacks: 'default',
       system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
       messages,
       stream: true,
