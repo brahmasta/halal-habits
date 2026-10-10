@@ -3,9 +3,11 @@
 #   .\scripts\build-android.ps1            # prebuild if needed, build, install, launch
 #   .\scripts\build-android.ps1 -Prebuild  # regenerate android/ from app.config.ts first
 #   .\scripts\build-android.ps1 -NoInstall # build only
+#   .\scripts\build-android.ps1 -Fast      # arm64-v8a only (faster; fine for modern phones)
 param(
   [switch]$Prebuild,
-  [switch]$NoInstall
+  [switch]$NoInstall,
+  [switch]$Fast
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
