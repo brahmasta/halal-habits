@@ -100,7 +100,7 @@ export default function EatMap() {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
-        <MapPanel markers={markers} center={center} userLocation={SG_CENTER} height={insets.top + 844} onMarkerPress={pick} dark={t.dark} ink={t.ink} bg={t.bg} surface={t.surface} ring={t.ring} brand={t.brand} brandInk={t.brandInk} style={{ flex: 1 }} />
+        <MapPanel markers={markers} center={center} userLocation={SG_CENTER} height={insets.top + 844} onMarkerPress={pick} dark={t.dark} ink={t.ink} bg={t.bg} surface={t.surface} ring={t.ring} brand={t.brand} brandInk={t.brandInk} style={{ flex: 1, height: '100%' } as any} />
       </View>
 
       <View style={{ position: 'absolute', top, left: 18, right: 18, flexDirection: 'row', gap: 10 }}>
