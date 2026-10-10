@@ -1,5 +1,5 @@
 // Quick check that this JVM can open outbound HTTPS connections (Avira/firewall diagnosis).
-// Run: & "<jdk>binjava.exe" .scriptsdiagnosticsNetTest.java
+// Run from the repo root: & "<jdk>\bin\java.exe" .\scripts\diagnostics\NetTest.java
 import java.net.*;
 public class NetTest {
   public static void main(String[] a) throws Exception {
