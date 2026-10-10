@@ -8,8 +8,10 @@
 import { SEED_PLACES } from '../lib/places-seed';
 import { SEED_FOOD } from '../lib/food-seed';
 
-// Use the www host directly: the apex answers with a 308 that has no CORS header, which browsers reject.
-const API_BASE = 'https://www.halalhabits.app';
+// Places data comes from the app's own Supabase edge function (supabase/functions/places).
+const FN_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://bekvxwarareoxulpswsm.supabase.co'}/functions/v1`;
+const placesUrl = (kind: 'mosques' | 'food', loc: { lat: number; lng: number }) =>
+  `${FN_BASE}/places?kind=${kind}&lat=${loc.lat.toFixed(5)}&lng=${loc.lng.toFixed(5)}`;
 
 // Default reference point (Singapore CBD / Kampong Glam) used for distances and
 // the "nearby food" query, until device geolocation is wired up.
@@ -113,21 +115,34 @@ interface MosqueRow {
   address: string;
   lat: number;
   lng: number;
+  jumaah_time?: string | null;
+  open_until?: string | null;
+  womens_area?: boolean | null;
+  steps?: Array<[string, string]> | null;
 }
+
+interface GoogleMosque {
+  id?: string;
+  displayName?: { text: string };
+  formattedAddress?: string;
+  location?: { latitude: number; longitude: number };
+}
+
+const normName = (n: string) => n.toLowerCase().replace(/^(masjid|musollah|surau)\s+/, '').replace(/[^a-z0-9]/g, '');
 
 export async function fetchMosques(loc: LatLng = SG_CENTER): Promise<Mosque[]> {
   let rows: MosqueRow[] = [];
+  let google: GoogleMosque[] = [];
   try {
-    const res = await fetchT(`${API_BASE}/api/mosques?lat=${loc.lat}&lng=${loc.lng}`);
+    const res = await fetchT(placesUrl('mosques', loc));
     if (!res.ok) throw new Error(`mosques HTTP ${res.status}`);
-    const json = (await res.json()) as { dbPlaces?: MosqueRow[] };
+    const json = (await res.json()) as { dbPlaces?: MosqueRow[]; places?: GoogleMosque[] };
     rows = json.dbPlaces ?? [];
+    google = json.places ?? [];
   } catch {
-    rows = [];
+    return seedMosques(loc);
   }
-  // The live directory is still being populated; fall back to the curated set.
-  if (!rows.length) return seedMosques(loc);
-  return rows
+  const curated = rows
     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
     .map<Mosque>((r) => ({
       id: String(r.id),
@@ -136,11 +151,29 @@ export async function fetchMosques(loc: LatLng = SG_CENTER): Promise<Mosque[]> {
       area: r.area ?? '',
       address: r.address ?? '',
       distanceKm: round1(haversineKm(loc, { lat: r.lat, lng: r.lng })),
+      jemaahTime: r.jumaah_time ?? undefined,
       emoji: r.type === 'prayer_room' ? '🏪' : '🕌',
       coordinates: { lat: r.lat, lng: r.lng },
-    }))
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .slice(0, 60);
+      openUntil: r.open_until ?? undefined,
+      women: r.womens_area ?? undefined,
+      steps: r.steps ?? undefined,
+    }));
+  // Google fills in masjids we haven't curated yet; curated rows win on name clashes.
+  const seen = new Set(curated.map((m) => normName(m.name)));
+  const extra = google
+    .filter((g) => g.location && g.displayName?.text && !seen.has(normName(g.displayName.text)))
+    .map<Mosque>((g) => ({
+      id: `g_${g.id ?? g.displayName!.text}`,
+      name: g.displayName!.text,
+      type: 'Masjid',
+      area: (g.formattedAddress ?? '').split(',')[0],
+      address: g.formattedAddress ?? '',
+      distanceKm: round1(haversineKm(loc, { lat: g.location!.latitude, lng: g.location!.longitude })),
+      emoji: '🕌',
+      coordinates: { lat: g.location!.latitude, lng: g.location!.longitude },
+    }));
+  const all = [...curated, ...extra].sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 60);
+  return all.length ? all : seedMosques(loc);
 }
 
 // ── Halal food ───────────────────────────────────────────────────────────────
@@ -194,7 +227,7 @@ export function seedFood(loc: LatLng = SG_CENTER): HalalItem[] {
 export async function fetchHalalFood(loc: LatLng = SG_CENTER): Promise<HalalItem[]> {
   let json: { dbPlaces?: FoodRow[]; places?: GoogleFood[] };
   try {
-    const res = await fetchT(`${API_BASE}/api/food?lat=${loc.lat}&lng=${loc.lng}`, 15000);
+    const res = await fetchT(placesUrl('food', loc), 15000);
     if (!res.ok) throw new Error(`food HTTP ${res.status}`);
     json = (await res.json()) as typeof json;
   } catch {
