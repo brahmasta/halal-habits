@@ -128,7 +128,7 @@ interface GoogleMosque {
   location?: { latitude: number; longitude: number };
 }
 
-const normName = (n: string) => n.toLowerCase().replace(/^(masjid|musollah|surau)\s+/, '').replace(/[^a-z0-9]/g, '');
+const normName = (n: string) => n.toLowerCase().replace(/\b(masjid|mosque|musollah|musolla|surau)\b/g, '').replace(/[^a-z0-9]/g, '');
 
 export async function fetchMosques(loc: LatLng = SG_CENTER): Promise<Mosque[]> {
   let rows: MosqueRow[] = [];
@@ -158,10 +158,14 @@ export async function fetchMosques(loc: LatLng = SG_CENTER): Promise<Mosque[]> {
       women: r.womens_area ?? undefined,
       steps: r.steps ?? undefined,
     }));
-  // Google fills in masjids we haven't curated yet; curated rows win on name clashes.
+  // Google fills in masjids we haven't curated yet. Curated rows win: a Google result counts as the
+  // same place if it sits within 100 m of one, or has the same name once "Masjid"/"Mosque" is stripped
+  // (Google says "Sultan Mosque" where we say "Masjid Sultan").
   const seen = new Set(curated.map((m) => normName(m.name)));
+  const nearCurated = (lat: number, lng: number) => curated.some((m) => haversineKm(m.coordinates, { lat, lng }) < 0.1);
   const extra = google
-    .filter((g) => g.location && g.displayName?.text && !seen.has(normName(g.displayName.text)))
+    .filter((g) => g.location && g.displayName?.text)
+    .filter((g) => !seen.has(normName(g.displayName!.text)) && !nearCurated(g.location!.latitude, g.location!.longitude))
     .map<Mosque>((g) => ({
       id: `g_${g.id ?? g.displayName!.text}`,
       name: g.displayName!.text,
