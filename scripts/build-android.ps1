@@ -11,8 +11,13 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
-# Android Studio's bundled JDK and the default SDK location.
-if (-not $env:JAVA_HOME) { $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr' }
+# React Native 0.85's Gradle tooling needs JDK 17 (jvmToolchain(17)). Prefer a JDK 17 in ~/.jdks;
+# with only Android Studio's JDK 25, Gradle tries to auto-download 17 via an old plugin that
+# crashes on Gradle 9 ("JvmVendorSpec ... IBM_SEMERU").
+$jdk17 = Get-ChildItem (Join-Path $env:USERPROFILE '.jdks') -Directory -Filter 'jdk-17*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+if ($jdk17) { $env:JAVA_HOME = $jdk17.FullName }
+elseif (-not $env:JAVA_HOME) { $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr' }
+Write-Host "==> Using JDK at $env:JAVA_HOME" -ForegroundColor Cyan
 if (-not $env:ANDROID_HOME) { $env:ANDROID_HOME = Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
 $env:Path = "$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
 $adb = Join-Path $env:ANDROID_HOME 'platform-tools\adb.exe'
