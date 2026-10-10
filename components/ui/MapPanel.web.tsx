@@ -6,6 +6,23 @@ import type { MapPanelProps } from './MapPanel.types';
 // Leaflet is bundled (no CDN) so the map never depends on unpkg being reachable.
 
 const SG = { lat: 1.3021, lng: 103.8567 };
+
+// OpenStreetMap raster tiles (no API key). A CSS filter mutes them to match the Chalk / Ink bases.
+const OSM_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+let styled = false;
+function ensureStyles() {
+  if (styled || typeof document === 'undefined') return;
+  styled = true;
+  const st = document.createElement('style');
+  st.textContent = `
+.hh-map-light .leaflet-tile-pane{filter:grayscale(.55) sepia(.16) saturate(.75) brightness(1.04) contrast(.94)}
+.hh-map-dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.5) brightness(.78) contrast(.9)}
+.hh-map .leaflet-control-attribution{font:10px Geist_400Regular,Geist,system-ui,sans-serif;color:#5C5F59;background:rgba(250,250,247,.75);padding:1px 6px;border-radius:999px 0 0 0}
+.hh-map-dark .leaflet-control-attribution{color:#A4A79F;background:rgba(27,30,27,.75)}
+.hh-map .leaflet-control-attribution a{color:inherit}`;
+  document.head.appendChild(st);
+}
 const FONT = 'Geist_600SemiBold,Geist,system-ui,sans-serif';
 const MOSQUE = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c-1.5 3-3 4-3 6a3 3 0 006 0c0-2-1.5-3-3-6z"/><path d="M5 11a7 7 0 0114 0v10H5z"/><path d="M9 21v-5a3 3 0 016 0v5"/></svg>`;
 
@@ -36,6 +53,7 @@ export function MapPanel({ markers, center, userLocation, zoom = 15, height = 47
     const u = userLocation ?? c;
     try {
       if (!mapRef.current) {
+        ensureStyles();
         mapRef.current = L.map(el, {
           zoomControl: false,
           attributionControl: false,
@@ -46,8 +64,8 @@ export function MapPanel({ markers, center, userLocation, zoom = 15, height = 47
           boxZoom: interactive,
           keyboard: interactive,
         }).setView([c.lat, c.lng], zoom);
-        L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_nolabels' : 'light_nolabels'}/{z}/{x}/{y}{r}.png`, { maxZoom: 19 }).addTo(mapRef.current);
-        L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_only_labels' : 'light_only_labels'}/{z}/{x}/{y}{r}.png`, { maxZoom: 19, opacity: 0.7 }).addTo(mapRef.current);
+        L.tileLayer(OSM_URL, { maxZoom: 19, attribution: OSM_ATTR }).addTo(mapRef.current);
+        L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(mapRef.current);
         layerRef.current = L.layerGroup().addTo(mapRef.current);
         setTimeout(() => mapRef.current?.invalidateSize(), 150);
       } else {
@@ -99,7 +117,7 @@ export function MapPanel({ markers, center, userLocation, zoom = 15, height = 47
 
   return (
     <div style={{ position: 'relative', height, width: '100%', ...(style as any) }}>
-      <div ref={elRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: dark ? '#1B1E1B' : '#E6E3DA', pointerEvents: interactive ? 'auto' : 'none' }} />
+      <div ref={elRef} className={`hh-map ${dark ? 'hh-map-dark' : 'hh-map-light'}`} style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: dark ? '#1B1E1B' : '#E6E3DA', pointerEvents: interactive ? 'auto' : 'none' }} />
       {failed ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `500 13px ${FONT}`, color: '#5C5F59' }}>Map unavailable</div>
       ) : null}
