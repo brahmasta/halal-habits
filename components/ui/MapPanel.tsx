@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Platform, Text, View, ViewStyle } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import type { MapPanelProps } from './MapPanel.types';
 import { Fonts } from '@/constants/theme';
@@ -68,31 +68,63 @@ export function MapPanel({ markers, center, userLocation, height = 470, showYouA
         {route && route.length > 1 ? (
           <Polyline coordinates={route.map((p) => ({ latitude: p.lat, longitude: p.lng }))} strokeColor={ink} strokeWidth={2.5} lineDashPattern={[5, 4]} />
         ) : null}
-        {markers.map((m) =>
-          m.kind === 'masjid' ? (
-            <Marker key={m.id} coordinate={{ latitude: m.lat, longitude: m.lng }} anchor={{ x: 0.5, y: 0.5 }} onPress={() => onMarkerPress?.(m.id)} tracksViewChanges={false}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingLeft: 6, paddingRight: 10, borderRadius: 999, backgroundColor: brand, boxShadow: '0 8px 18px -8px rgba(0,0,0,0.4)' } as ViewStyle}>
-                <Icon name="mosque-glyph" size={14} color={brandInk} />
-                <Text style={{ fontFamily: Fonts.semibold, fontSize: 11, color: brandInk }} numberOfLines={1}>{m.label}</Text>
-              </View>
-            </Marker>
-          ) : (
-            <Marker key={m.id} coordinate={{ latitude: m.lat, longitude: m.lng }} anchor={{ x: 0.5, y: 1 }} onPress={() => onMarkerPress?.(m.id)} tracksViewChanges={false}>
-              <View style={{ alignItems: 'center' }}>
-                <View style={{ paddingVertical: m.selected ? 7 : 5, paddingHorizontal: m.selected ? 12 : 10, borderRadius: 999, backgroundColor: m.selected ? ink : surface, boxShadow: `0 0 0 1px ${ring}, 0 10px 20px -10px rgba(18,20,18,0.4)` } as ViewStyle}>
-                  <Text style={{ fontFamily: Fonts.semibold, fontSize: m.selected ? 12.5 : 11.5, color: m.selected ? bg : ink }}>{m.label}</Text>
-                </View>
-                <View style={{ width: 2, height: 8, backgroundColor: m.selected ? ink : '#A3A59E' }} />
-              </View>
-            </Marker>
-          )
-        )}
-        {showYouAreHere ? (
-          <Marker coordinate={{ latitude: u.lat, longitude: u.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
-            <View style={{ width: 18, height: 18, borderRadius: 99, backgroundColor: '#3A6FD8', boxShadow: '0 0 0 4px #fff, 0 0 0 16px rgba(58,111,216,0.16)' } as ViewStyle} />
-          </Marker>
-        ) : null}
+        {markers.map((m) => (
+          <Pin key={m.id} m={m} ink={ink} bg={bg} surface={surface} ring={ring} brand={brand} brandInk={brandInk} onPress={() => onMarkerPress?.(m.id)} />
+        ))}
+        {showYouAreHere ? <YouAreHere lat={u.lat} lng={u.lng} /> : null}
       </MapView>
     </View>
+  );
+}
+
+// Android renders custom marker views to a bitmap. With tracksViewChanges={false} from the start,
+// that snapshot is taken before text/fonts are drawn (blank pills). Track changes briefly, then stop.
+function useSettledTracking(key: string) {
+  const [track, setTrack] = useState(true);
+  useEffect(() => {
+    setTrack(true);
+    const t = setTimeout(() => setTrack(false), 800);
+    return () => clearTimeout(t);
+  }, [key]);
+  return track;
+}
+
+type PinProps = { m: MapPanelProps['markers'][number]; ink: string; bg: string; surface: string; ring: string; brand: string; brandInk: string; onPress: () => void };
+
+// No boxShadow inside markers: Android's bitmap snapshot draws it as a square.
+function Pin({ m, ink, bg, surface, ring, brand, brandInk, onPress }: PinProps) {
+  const track = useSettledTracking(`${m.label}|${m.selected ? 1 : 0}`);
+  if (m.kind === 'masjid') {
+    return (
+      <Marker coordinate={{ latitude: m.lat, longitude: m.lng }} anchor={{ x: 0.5, y: 0.5 }} onPress={onPress} tracksViewChanges={track}>
+        <View collapsable={false} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingLeft: 6, paddingRight: 10, borderRadius: 999, backgroundColor: brand, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)' }}>
+          <Icon name="mosque-glyph" size={14} color={brandInk} />
+          <Text style={{ fontFamily: Fonts.semibold, fontSize: 11, color: brandInk }} numberOfLines={1}>{m.label}</Text>
+        </View>
+      </Marker>
+    );
+  }
+  return (
+    <Marker coordinate={{ latitude: m.lat, longitude: m.lng }} anchor={{ x: 0.5, y: 1 }} onPress={onPress} tracksViewChanges={track}>
+      <View collapsable={false} style={{ alignItems: 'center' }}>
+        <View style={{ paddingVertical: m.selected ? 7 : 5, paddingHorizontal: m.selected ? 12 : 10, borderRadius: 999, backgroundColor: m.selected ? ink : surface, borderWidth: 1, borderColor: m.selected ? ink : ring }}>
+          <Text style={{ fontFamily: Fonts.semibold, fontSize: m.selected ? 12.5 : 11.5, color: m.selected ? bg : ink }} numberOfLines={1}>{m.label}</Text>
+        </View>
+        <View style={{ width: 2, height: 8, backgroundColor: m.selected ? ink : '#A3A59E' }} />
+      </View>
+    </Marker>
+  );
+}
+
+function YouAreHere({ lat, lng }: { lat: number; lng: number }) {
+  const track = useSettledTracking('you');
+  return (
+    <Marker coordinate={{ latitude: lat, longitude: lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={track}>
+      <View collapsable={false} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(58,111,216,0.16)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#3A6FD8' }} />
+        </View>
+      </View>
+    </Marker>
   );
 }

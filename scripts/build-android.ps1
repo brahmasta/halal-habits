@@ -35,6 +35,7 @@ if ($Prebuild -or -not (Test-Path 'android\gradlew.bat')) {
 Write-Host '==> Building release APK (first run downloads dependencies, ~10 min)' -ForegroundColor Cyan
 Push-Location android
 try {
+  $env:NODE_ENV = 'production'  # release bundle; also silences an expo env warning on stderr
   # gradlew.bat splits arguments on '=', so pass the ABI list as a Gradle project-property env var.
   if ($Fast) { $env:ORG_GRADLE_PROJECT_reactNativeArchitectures = 'arm64-v8a'; Write-Host '    (fast mode: arm64-v8a only)' -ForegroundColor DarkGray }
   else { Remove-Item Env:\ORG_GRADLE_PROJECT_reactNativeArchitectures -ErrorAction SilentlyContinue }
@@ -52,5 +53,5 @@ if (-not $devices) { Write-Host 'No phone connected (adb devices). Skipping inst
 Write-Host '==> Installing on the connected phone' -ForegroundColor Cyan
 & $adb install -r $apk
 if ($LASTEXITCODE -ne 0) { throw 'adb install failed' }
-& $adb shell monkey -p app.halalhabits.mobile -c android.intent.category.LAUNCHER 1 | Out-Null
+& $adb shell "monkey -p app.halalhabits.mobile -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1"
 Write-Host '==> Halal Habit installed and launched' -ForegroundColor Green
