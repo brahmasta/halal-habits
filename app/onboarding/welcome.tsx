@@ -7,7 +7,6 @@ import { Btn, Stage } from '@/components/ui/kit';
 import { Khatam, Star, useArch } from '@/components/ui/ornament';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useNow } from '@/store/now';
-import { useApp } from '@/store/app';
 
 const ARCH_H = [206, 228, 250, 228, 206];
 
@@ -25,12 +24,6 @@ export default function Welcome() {
   const insets = useSafeAreaInsets();
   const t = useTheme();
   const { times } = useNow();
-  const { dispatch } = useApp();
-
-  const skip = () => {
-    dispatch({ type: 'onboarded' });
-    router.replace('/(tabs)/home');
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: WELCOME_BG }}>
@@ -85,7 +78,7 @@ export default function Welcome() {
       </Stage>
       <View style={{ paddingHorizontal: 26, paddingBottom: Math.max(insets.bottom, 20) + 24 }}>
         <Btn kind="ghost" onPress={() => router.push('/onboarding/location')}>Get started</Btn>
-        <Pressable onPress={skip} hitSlop={8} style={{ alignItems: 'center', marginTop: 16 }}>
+        <Pressable onPress={() => router.push('/sign-in')} hitSlop={8} style={{ alignItems: 'center', marginTop: 16 }}>
           <Text style={{ fontFamily: Fonts.body, fontSize: 13.5, color: 'rgba(243,241,236,0.6)' }}>I have an account</Text>
         </Pressable>
       </View>

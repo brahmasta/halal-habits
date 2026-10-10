@@ -16,6 +16,7 @@ import { ReemKufi_500Medium } from '@expo-google-fonts/reem-kufi';
 import { CHALK } from '@/constants/theme';
 import { AppProvider, useApp } from '@/store/app';
 import { NowProvider } from '@/store/now';
+import { AuthProvider } from '@/store/auth';
 import { ThemeProvider, useTheme } from '@/components/ui/ThemeContext';
 
 function Shell() {
@@ -29,6 +30,8 @@ function Shell() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding/welcome" options={{ contentStyle: { backgroundColor: '#121412' } }} />
         <Stack.Screen name="streak" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="sign-in" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="place/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="food/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
@@ -58,9 +61,11 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AppProvider>
         <ThemeProvider>
-          <NowProvider>
-            <Shell />
-          </NowProvider>
+          <AuthProvider>
+            <NowProvider>
+              <Shell />
+            </NowProvider>
+          </AuthProvider>
         </ThemeProvider>
       </AppProvider>
     </SafeAreaProvider>

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Text, View, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
-import { B, Bezel, D, I, Photo, Round, Screen, SectionHead, Tag } from '@/components/ui/kit';
+import { B, Bezel, D, I, Photo, Round, Screen, SectionHead, Tag, Tap } from '@/components/ui/kit';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { SkyCard } from '@/components/prayer/SkyCard';
 import { Fonts, SKY, SKY_ORDER } from '@/constants/theme';
@@ -40,9 +40,9 @@ export default function Home() {
   return (
     <Screen tab>
       <View style={{ paddingHorizontal: 22, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 44, height: 44, borderRadius: 999, backgroundColor: t.brand, alignItems: 'center', justifyContent: 'center' }}>
+        <Tap onPress={() => router.push('/profile')} style={{ width: 44, height: 44, borderRadius: 999, backgroundColor: t.brand, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontFamily: Fonts.display, fontSize: 18, color: t.brandInk }}>{state.name.charAt(0)}</Text>
-        </View>
+        </Tap>
         <View style={{ flex: 1 }}>
           <B size={12.5} color={t.muted}>{t.islamic && hijri ? `${hijri} · ${fmtDate()}` : `${fmtDate()}${hijri ? ` · ${hijri}` : ''}`}{offline ? ' · Offline' : ''}</B>
           {t.islamic ? (

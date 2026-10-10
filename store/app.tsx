@@ -29,6 +29,8 @@ export interface AppState {
   style: 'islamic' | 'modern';
   circle: Friend[];
   saved: string[]; // food / place ids
+  /** device location (null = use Singapore default) */
+  location: { lat: number; lng: number } | null;
 }
 
 const DEFAULT_CIRCLE: Friend[] = [
@@ -49,6 +51,7 @@ const initial: AppState = {
   style: 'islamic',
   circle: DEFAULT_CIRCLE,
   saved: [],
+  location: null,
 };
 
 type Action =
@@ -61,6 +64,8 @@ type Action =
   | { type: 'theme'; theme: AppState['theme'] }
   | { type: 'style'; style: AppState['style'] }
   | { type: 'toggleSaved'; id: string }
+  | { type: 'name'; name: string }
+  | { type: 'location'; location: AppState['location'] }
   | { type: 'reset' };
 
 function reducer(s: AppState, a: Action): AppState {
@@ -89,6 +94,10 @@ function reducer(s: AppState, a: Action): AppState {
         ...s,
         saved: s.saved.includes(a.id) ? s.saved.filter((x) => x !== a.id) : [...s.saved, a.id],
       };
+    case 'name':
+      return s.name === a.name ? s : { ...s, name: a.name };
+    case 'location':
+      return { ...s, location: a.location };
     case 'reset':
       return { ...initial, hydrated: true };
   }

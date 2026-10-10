@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Text, View } from 'react-native';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StepFrame } from '@/components/onboarding/StepFrame';
 import { B, Bezel, D, I } from '@/components/ui/kit';
 import { Icon } from '@/components/ui/Icon';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { SKY } from '@/constants/theme';
+import { useApp } from '@/store/app';
 
 const POINTS = [
   ['map-pin', 'Nearest musollah', 'In any mall, campus or the CBD'],
@@ -15,6 +18,28 @@ const POINTS = [
 export default function LocationStep() {
   const t = useTheme();
   const router = useRouter();
+  const { dispatch } = useApp();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const allow = async () => {
+    setBusy(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        dispatch({ type: 'location', location: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
+      } else {
+        setNote('No problem — we will use central Singapore until you choose an area.');
+      }
+    } catch {
+      setNote('Could not read your location; using central Singapore for now.');
+    } finally {
+      setBusy(false);
+      router.push('/onboarding/goals');
+    }
+  };
+
   return (
     <StepFrame
       step={1}
@@ -25,11 +50,12 @@ export default function LocationStep() {
           <I size={44}>standing?</I>
         </Text>
       }
-      cta="Allow location"
-      onNext={() => router.push('/onboarding/goals')}
+      cta={busy ? 'Finding you…' : 'Allow location'}
+      disabled={busy}
+      onNext={allow}
     >
       <View style={{ paddingHorizontal: 24, paddingTop: 14 }}>
-        <B size={14.5} color={t.muted} lh={1.5}>Only used while the app is open. Nothing is stored or shared.</B>
+        <B size={14.5} color={t.muted} lh={1.5}>{note ?? 'Only used while the app is open. Nothing is stored or shared.'}</B>
       </View>
       <View style={{ paddingHorizontal: 22, paddingTop: 30, gap: 10 }}>
         {POINTS.map(([ic, a, b], i) => (

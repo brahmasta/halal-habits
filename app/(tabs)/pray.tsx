@@ -84,7 +84,7 @@ export default function Pray() {
             <I size={50}>sky</I>
           </Text>
         </View>
-        <Round name="settings" onPress={() => dispatch({ type: 'theme', theme: t.dark ? 'light' : 'dark' })} />
+        <Round name="settings" onPress={() => router.push('/profile')} />
       </View>
 
       <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 22, marginTop: 24, padding: 5, borderRadius: 999, backgroundColor: t.shell, boxShadow: `0 0 0 1px ${t.ring}` } as ViewStyle}>
