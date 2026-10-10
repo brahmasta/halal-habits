@@ -206,10 +206,10 @@ export function Stage({ children, style }: { children: React.ReactNode; style?: 
 
 // ── Screen scaffold ─────────────────────────────────────────────────────────
 
-export function Screen({ children, bg, tab, bottom, scroll = true, style, contentStyle }: { children: React.ReactNode; bg?: string; tab?: boolean; bottom?: React.ReactNode; scroll?: boolean; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle> }) {
+export function Screen({ children, bg, tab, bottom, scroll = true, topGap = 32, style, contentStyle }: { children: React.ReactNode; bg?: string; tab?: boolean; bottom?: React.ReactNode; scroll?: boolean; topGap?: number; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const top = Math.max(insets.top, Platform.OS === 'web' ? 24 : 0) + 32;
+  const top = Math.max(insets.top, Platform.OS === 'web' ? 24 : 0) + topGap;
   const padBottom = tab && !bottom ? 116 : 24;
   const surface = bg ?? t.bg;
   return (

@@ -10,14 +10,16 @@ import { useNow } from '@/store/now';
 const EASE = Easing.bezier(0.32, 0.72, 0, 1);
 const BGS = SKY_ORDER.map((k) => SKY[k].bg);
 const MIHRAB_H = 340;
+const MIHRAB_H_COMPACT = 270;
 
-/** Home hero. Background animates (0.9s) when the next prayer changes. */
-export function SkyCard() {
+/** Home hero. Background animates (0.9s) when the next prayer changes. `compact` fits short screens. */
+export function SkyCard({ compact = false }: { compact?: boolean }) {
   const t = useTheme();
   const { sky, idx, next, countdown } = useNow();
   const [w, setW] = useState<number | undefined>();
-  const outer = useArch(MIHRAB_H, 30, w);
-  const inner = useArch(MIHRAB_H - 18, 22, w ? w - 18 : undefined);
+  const archH = compact ? MIHRAB_H_COMPACT : MIHRAB_H;
+  const outer = useArch(archH, 30, w);
+  const inner = useArch(archH - 18, 22, w ? w - 18 : undefined);
   const prog = useSharedValue(idx);
   useEffect(() => {
     prog.value = withTiming(idx, { duration: 900, easing: EASE });
@@ -28,20 +30,20 @@ export function SkyCard() {
 
   if (t.islamic) {
     return (
-      <Animated.View ref={outer.ref} onLayout={(e) => setW(e.nativeEvent.layout.width)} style={[{ paddingTop: 40, paddingHorizontal: 22, paddingBottom: 22, overflow: 'hidden', alignItems: 'center', boxShadow: bezelShadow(t, true, sky.bg) } as any, outer.style, anim]}>
+      <Animated.View ref={outer.ref} onLayout={(e) => setW(e.nativeEvent.layout.width)} style={[{ paddingTop: compact ? 26 : 40, paddingHorizontal: 22, paddingBottom: compact ? 16 : 22, overflow: 'hidden', alignItems: 'center', boxShadow: bezelShadow(t, true, sky.bg) } as any, outer.style, anim]}>
         <Khatam color={sky.ink} opacity={0.1} />
         <View ref={inner.ref} pointerEvents="none" style={[{ position: 'absolute', left: 9, right: 9, top: 9, bottom: 9, boxShadow: `inset 0 0 0 1px ${sky.dim}`, opacity: 0.45 } as ViewStyle, inner.style]} />
-        <Star size={16} color={sky.sub} />
-        <Text style={{ fontFamily: Fonts.kufi, fontSize: 40, color: sky.sub, marginTop: 8, lineHeight: 50, writingDirection: 'rtl', textAlign: 'center' }}>{sky.ar}</Text>
-        <D size={62} color={sky.ink} lh={0.9} style={{ marginTop: 2, textAlign: 'center' }}>{sky.name}</D>
-        <Text style={{ marginTop: 10, textAlign: 'center' }}>
-          <Text style={{ fontFamily: Fonts.displayRegular, fontSize: 30, color: sky.ink, letterSpacing: -1.05 }}>{next?.time}</Text>
+        <Star size={compact ? 13 : 16} color={sky.sub} />
+        <Text style={{ fontFamily: Fonts.kufi, fontSize: compact ? 30 : 40, color: sky.sub, marginTop: compact ? 4 : 8, lineHeight: compact ? 38 : 50, writingDirection: 'rtl', textAlign: 'center' }}>{sky.ar}</Text>
+        <D size={compact ? 48 : 62} color={sky.ink} lh={0.9} style={{ marginTop: 2, textAlign: 'center' }}>{sky.name}</D>
+        <Text style={{ marginTop: compact ? 6 : 10, textAlign: 'center' }}>
+          <Text style={{ fontFamily: Fonts.displayRegular, fontSize: compact ? 25 : 30, color: sky.ink, letterSpacing: -1.05 }}>{next?.time}</Text>
           <B size={14} color={sky.dim}> {next?.meridiem}</B>
         </Text>
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: compact ? 10 : 16 }}>
           <Tag color={sky.ink} bg="rgba(255,255,255,0.14)" ring="rgba(255,255,255,0.12)" dot={sky.sub}>Up next · {countdown}</Tag>
         </View>
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: compact ? 10 : 14 }}>
           <DayDots onDark={sky.onDark} />
         </View>
       </Animated.View>
